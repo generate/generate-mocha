@@ -2,7 +2,7 @@
 
 require('mocha');
 var assert = require('assert');
-var <%= varname %> = require('./');
+var <%= varname %> = require('<%= relativeDir %>');
 var Base = require('base');
 var app;
 

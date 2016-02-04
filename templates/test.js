@@ -2,23 +2,21 @@
 
 require('mocha');
 var assert = require('assert');
-var download = require('./');
-var Base = require('base');
-var app;
+var <%= varname %> = require('<%= relativeDir %>');
 
-describe('base-download', function() {
-  beforeEach(function() {
-    app = new Base();
-    app.use(download());
+describe('<%= name %>', function() {
+  it('should export a function', function() {
+    assert.equal(typeof <%= varname %>, 'function');
   });
 
-  it('should export a function', function() {
-    assert.equal(typeof download, 'function');
+  it('should export an object', function() {
+    assert(<%= varname %>);
+    assert.equal(typeof <%= varname %>, 'object');
   });
 
   it('should throw an error when invalid args are passed', function(cb) {
     try {
-      download();
+      <%= varname %>();
       cb(new Error('expected an error'));
     } catch (err) {
       assert(err);
