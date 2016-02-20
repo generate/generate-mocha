@@ -1,64 +1,64 @@
 'use strict';
 
 var path = require('path');
-var namify = require('namify');
+var match = require('match-file');
+var conflicts = require('file-conflicts');
+var extend = require('extend-shallow');
 
-module.exports = function(app, generate, env) {
-  app.engine('text', require('engine-base'));
-
-  app.task('default', function(cb) {
-    app.toStream('templates', filter(env))
-      .pipe(app.renderFile('text', data(env, app)))
-      .pipe(app.dest(dest(env, app)))
-      .on('end', function() {
-        app.devDependencies(deps(env), cb);
-      });
-  });
+module.exports = function(app, base) {
+  app.task('mocha', { silent: true }, task(app, base.options));
+  app.task('default', ['mocha']);
 };
 
-function deps(env) {
-  if (env.argv.raw.file === 'base') {
-    return ['mocha', 'base'];
-  }
-  return ['mocha'];
-}
+function task(app, options) {
+  return function(cb) {
+    var opts = extend({}, app.options, options);
 
-function dest(env, app) {
-  var destDir = env.dest || app.cwd;
-  return function(file) {
-    file.basename = 'test.js';
-    return destDir;
+    // lazily invoke the generator
+    mocha(app, opts);
+
+    return app.toStream('templates', filter(opts))
+      .pipe(app.renderFile('*', opts))
+      .pipe(app.conflicts(app.cwd))
+      .pipe(app.dest(app.cwd));
   };
 }
 
-function relative(env, app) {
-  var destDir = path.resolve(env.dest || app.cwd);
-  var fp = path.relative(destDir, app.cwd);
-  return fp || './';
+function mocha(app, options) {
+  app.extendWith(require('generate-defaults'));
+  // load `base-conflicts` plugin
+  app.use(conflicts());
+  // load mocha test templates
+  app.templates('templates/*', { cwd: __dirname });
+  // custom helper for relative path
+  app.helper('relative', function(dest) {
+    return path.relative(this.context.cwd, dest);
+  });
 }
 
-function data(env, app) {
-  var opts = env.argv.raw;
-  var obj = env.user.pkg;
-  var name = env.user.pkg.name;
-  obj.varname = opts.var || namify(name);
-  obj.relativeDir = relative(env, app);
-  return obj;
-}
+/**
+ * Expose `invoke` to allow customizing when the generator is invoked
+ */
 
-function filter(env) {
+module.exports.invoke = mocha;
+
+/**
+ * Expose `task` to allow customing how task is registered
+ */
+
+module.exports.task = task;
+
+/**
+ * Filter files to be rendered
+ */
+
+function filter(opts) {
+  var name = opts.t || opts.tmpl || 'test.js';
   return function(key, file) {
-    return file.basename === toFilename(env);
-  };
-}
-
-function arrayify(val) {
-  return val ? (Array.isArray(val) ? val : [val]) : [];
-}
-
-function toFilename(env) {
-  var name = env.argv.raw.file || 'test.js';
-  name = name.replace(/^test-|\.js$/g, '');
-  if (name === 'test') return name + '.js';
-  return 'test-' + name + '.js';
+    if (name === 'base' && file.stem === 'test-base') {
+      file.basename = 'test.js';
+      return true;
+    }
+    return name === key || match(name, file);
+  }
 }
