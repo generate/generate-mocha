@@ -2,12 +2,12 @@
 
 require('mocha');
 var assert = require('assert');
-var <%= varname %> = require('./');
+var <%= alias %> = require('./');
 
 describe('errors', function() {
   it('should throw an error when invalid args are passed', function(cb) {
     try {
-      <%= varname %>();
+      <%= alias %>();
       cb(new Error('expected an error'));
     } catch (err) {
       assert(err);
