@@ -21,13 +21,22 @@
     "test": "mocha"
   },
   "preferGlobal": true,
+  "dependencies": {
+    "extend-shallow": "^2.0.1",
+    "generate-collections": "^0.1.5",
+    "generate-defaults": "^0.1.6",
+    "match-file": "^0.1.0",
+    "object.pick": "^1.1.1"
+  },
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-eslint": "^1.0.0",
     "gulp-format-md": "^0.1.7",
     "gulp-istanbul": "^0.10.2",
     "gulp-mocha": "^2.1.3",
-    "mocha": "*"
+    "kind-of": "^3.0.2",
+    "parse-filepath": "^0.6.3",
+    "through2": "^2.0.1"
   },
   "keywords": [
     "create",
@@ -41,9 +50,7 @@
     "yeoman"
   ],
   "verb": {
-    "related": {
-      "list": []
-    },
+    "run": true,
     "toc": false,
     "layout": "default",
     "tasks": [
@@ -51,10 +58,13 @@
     ],
     "plugins": [
       "gulp-format-md"
-    ]
-  },
-  "dependencies": {
-    "extend-shallow": "^2.0.1",
-    "match-file": "^0.1.0"
+    ],
+    "reflinks": [
+      "verb",
+      "generate"
+    ],
+    "lint": {
+      "reflinks": true
+    }
   }
 }
