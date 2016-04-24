@@ -2,6 +2,7 @@
 
 var path = require('path');
 var debug = require('debug')('generate:mocha');
+var utils = require('./lib/utils');
 var argv = require('minimist')(process.argv.slice(2), {
   alias: {tmpl: 't'},
   default: {
