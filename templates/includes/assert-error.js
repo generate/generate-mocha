@@ -1,6 +1,6 @@
   it('should throw an error when invalid args are passed', function(cb) {
     try {
-      <%= alias %>();
+      <%= camelcase(alias) %>();
       cb(new Error('expected an error'));
     } catch (err) {
       assert(err);
