@@ -1,11 +1,13 @@
 'use strict';
 
 var path = require('path');
-var match = require('match-file');
-var extend = require('extend-shallow');
-var conflicts = require('base-fs-conflicts');
-var rename = require('./rename');
-var files = require('./files');
+var debug = require('debug')('generate:mocha');
+var argv = require('minimist')(process.argv.slice(2), {
+  alias: {tmpl: 't'},
+  default: {
+    tmpl: 'test.js'
+  }
+});
 
 /**
  * Extend your generator with the features and settings of this
@@ -14,44 +16,44 @@ var files = require('./files');
  * ```js
  * app.extendWith(require('generate-mocha'));
  * ```
- * @param {Object} `app` your generator instance
+ * @param {Object} `app` generator instance
  * @api public
  */
 
 module.exports = function(app, base) {
-  app.debug('initializing generator');
+  if (this.isRegistered('generate-mocha')) return;
+  debug('initializing <%s>, from <%s>', __filename, module.parent.id);
+
+  var templates = path.resolve.bind(path, __dirname, 'templates');
+  var rename = require('./lib/rename');
+  var files = require('./lib/files');
+  var utils = require('./lib/utils');
 
   /**
-   * Options (merge `base` instance options onto our
-   * generator's options)
+   * Register instance plugins
    */
 
-  app.option({delims: ['<%', '%>']}, base.options);
+  app
+    .use(require('generate-defaults'))
+    .use(require('generate-collections'))
+    .use(utils.conflicts())
+    .use(rename())
+    .use(files());
+
+  /**
+   * Set options
+   */
+
+  app.option(base.options);
+  app.option(argv);
+  app.option({delims: ['<%', '%>']});
   app.option('renameFile', function(file) {
     file.stem = 'test';
     return file;
   });
 
-  var gwd = path.resolve.bind(path, __dirname);
-  var opts = app.options;
-
   /**
-   * Extend our generator with other generators
-   */
-
-  app.extendWith(require('generate-collections'));
-  app.extendWith(require('generate-defaults'));
-
-  /**
-   * Load instance plugins
-   */
-
-  app.use(conflicts(opts));
-  app.use(rename(opts));
-  app.use(files(opts));
-
-  /**
-   * Register pipeline plugins
+   * Pipeline plugins
    */
 
   app.plugin('rename', rename);
@@ -60,26 +62,29 @@ module.exports = function(app, base) {
    * Helpers
    */
 
+  // app.helpers(require('template-helpers'));
+  app.helper('camelcase', require('camel-case'));
   app.helper('relative', function(dest) {
-    return path.relative(this.context.cwd, dest);
+    dest = path.resolve(dest || this.options.dest || '.');
+    return dest !== this.app.cwd ? path.relative(dest, this.app.cwd) : './';
   });
 
   /**
-   * Pre-load templates
+   * Pre-load templates (needs to be done after collections are created)
    */
 
-  app.task('templates', function (cb) {
+  app.task('templates', function(cb) {
     app.debug('loading templates');
 
     app.includes.option('renameKey', function(key, file) {
       return file ? file.stem : path.basename(key, path.extname(key));
     });
 
-    app.includes('*.js', {cwd: gwd('templates/includes')});
-    app.layouts('*.js', {cwd: gwd('templates/layouts')});
+    app.includes('*.js', {cwd: templates('includes')});
+    app.layouts('*.js', {cwd: templates('layouts')});
     app.templates('*.js', {
-      cwd: gwd('templates'),
-      renameKey: function (key, file) {
+      cwd: templates(),
+      renameKey: function(key, file) {
         return file ? file.basename : path.basename(key);
       }
     });
@@ -89,18 +94,11 @@ module.exports = function(app, base) {
   });
 
   /**
-   * Run inherited tasks and pre-load tasks
-   */
-
-  app.task('setup', ['collections', 'defaults', 'templates']);
-
-  /**
    * Prompt the user for the `dest` to use
    */
 
   app.task('dest', function(cb) {
-    app.debug('prompting for destination directory');
-    app.question('dest', 'Destination directory?', {default: '.'});
+    app.question('dest', 'Destination directory?', {default: process.cwd()});
     app.ask('dest', {save: false}, function(err, answers) {
       if (err) return cb(err);
       app.option('dest', answers.dest);
@@ -113,28 +111,30 @@ module.exports = function(app, base) {
    * which files to write to disk.
    */
 
-  app.task('choose', ['setup', 'dest'], function(cb) {
-    app.chooseFiles(opts, cb);
+  app.task('choose', ['templates', 'dest'], function(cb) {
+    app.chooseFiles(app.options, cb);
   });
 
   /**
    * Write a `test.js` file to the user's working directory
    */
 
-  app.task('test', ['setup', 'dest'], function(cb) {
+  app.task('test', ['templates', 'dest'], function(cb) {
     app.debug('generating default test.js file');
     app.fillin('dest', app.cwd);
 
-    app.toStream('templates', filter(opts))
-      .pipe(app.renderFile('*', opts))
+    app.toStream('templates', filter(app.options))
+      .pipe(app.renderFile('*', app.options))
       .pipe(app.renameFile(function(file) {
-        file.filename = 'test';
+        file.stem = 'test';
         return file;
       }))
       .pipe(app.conflicts(app.option('dest')))
       .pipe(app.dest(app.option('dest')))
       .on('error', cb)
-      .on('end', cb);
+      .on('end', function() {
+        app.npm.askInstall('mocha', cb);
+      });
   });
 
   /**
@@ -152,13 +152,11 @@ function filter(opts) {
   if (Array.isArray(opts.files)) {
     return opts.files;
   }
-
-  var name = opts.t || opts.tmpl || 'test.js';
   return function(key, file) {
-    if (name === 'base' && file.stem === 'test-base') {
+    if (opts.tmpl === 'base' && file.stem === 'test-base') {
       file.basename = 'test.js';
       return true;
     }
-    return name === key || match(name, file);
-  }
+    return opts.tmpl === key || utils.match(opts.tmpl, file);
+  };
 }

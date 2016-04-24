@@ -59,12 +59,6 @@
     "yeoman"
   ],
   "verb": {
-    "run": true,
-    "toc": false,
-    "layout": "default",
-    "tasks": [
-      "readme"
-    ],
     "plugins": [
       "gulp-format-md"
     ],
@@ -73,8 +67,22 @@
       "generate",
       "verb"
     ],
+    "run": true,
+    "toc": true,
+    "layout": "default",
     "lint": {
       "reflinks": true
+    },
+    "tasks": [
+      "readme"
+    ],
+    "related": {
+      "list": [
+        "generate",
+        "generate-node",
+        "generate-defaults",
+        "generate-collections"
+      ]
     }
   }
 }
