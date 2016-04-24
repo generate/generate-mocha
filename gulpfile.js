@@ -4,25 +4,29 @@ var gulp = require('gulp');
 var mocha = require('gulp-mocha');
 var istanbul = require('gulp-istanbul');
 var eslint = require('gulp-eslint');
-
-var lint = ['index.js', 'No'];
+var unused = require('gulp-unused');
 
 gulp.task('coverage', function() {
-  return gulp.src(lint)
+  return gulp.src(['generator.js', 'lib/*.js'])
     .pipe(istanbul())
     .pipe(istanbul.hookRequire());
 });
 
 gulp.task('test', ['coverage'], function() {
-  return gulp.src('test/*.js')
+  return gulp.src('test.js')
     .pipe(mocha({reporter: 'spec'}))
     .pipe(istanbul.writeReports());
 });
 
 gulp.task('lint', function() {
-  return gulp.src(lint.concat(['test/*.js', 'gulpfile.js']))
+  return gulp.src(['*.js', 'lib/*.js'])
     .pipe(eslint())
     .pipe(eslint.format());
+});
+
+gulp.task('unused', function() {
+  return gulp.src(['*.js', 'lib/*.js'])
+    .pipe(unused({keys: Object.keys(require('./lib/utils.js'))}));
 });
 
 gulp.task('default', ['test', 'lint']);
