@@ -2,41 +2,50 @@
   "name": "generate-mocha",
   "description": "Generate mocha test files.",
   "version": "0.1.0",
-  "homepage": "https://github.com/jonschlinkert/generate-mocha",
+  "homepage": "https://github.com/generate/generate-mocha",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
-  "repository": "jonschlinkert/generate-mocha",
+  "repository": "generate/generate-mocha",
   "bugs": {
-    "url": "https://github.com/jonschlinkert/generate-mocha/issues"
+    "url": "https://github.com/generate/generate-mocha/issues"
   },
   "license": "MIT",
   "files": [
+    "generator.js",
     "index.js",
-    "generator.js"
+    "lib"
   ],
   "main": "index.js",
+  "preferGlobal": true,
   "engines": {
     "node": ">=0.10.0"
   },
   "scripts": {
     "test": "mocha"
   },
-  "preferGlobal": true,
   "dependencies": {
+    "base-fs-conflicts": "^0.1.2",
+    "camel-case": "^1.2.2",
+    "debug": "^2.2.0",
     "extend-shallow": "^2.0.1",
-    "generate-collections": "^0.1.5",
-    "generate-defaults": "^0.1.6",
+    "generate-collections": "^0.2.1",
+    "generate-defaults": "^0.2.0",
+    "kind-of": "^3.0.2",
+    "lazy-cache": "^1.0.3",
     "match-file": "^0.1.0",
-    "object.pick": "^1.1.1"
+    "minimist": "^1.2.0",
+    "mixin-deep": "^1.1.3",
+    "through2": "^2.0.1"
   },
   "devDependencies": {
+    "engine-base": "^0.1.2",
+    "generate": "^0.5.2",
     "gulp": "^3.9.0",
     "gulp-eslint": "^1.0.0",
     "gulp-format-md": "^0.1.7",
     "gulp-istanbul": "^0.10.2",
     "gulp-mocha": "^2.1.3",
-    "kind-of": "^3.0.2",
-    "parse-filepath": "^0.6.3",
-    "through2": "^2.0.1"
+    "gulp-unused": "^0.1.2",
+    "mocha": "^2.4.5"
   },
   "keywords": [
     "create",
@@ -60,8 +69,9 @@
       "gulp-format-md"
     ],
     "reflinks": [
-      "verb",
-      "generate"
+      "base",
+      "generate",
+      "verb"
     ],
     "lint": {
       "reflinks": true
