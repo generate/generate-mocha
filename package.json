@@ -12,7 +12,8 @@
   "files": [
     "generator.js",
     "index.js",
-    "lib"
+    "lib",
+    "templates"
   ],
   "main": "index.js",
   "preferGlobal": true,
@@ -79,9 +80,9 @@
     "related": {
       "list": [
         "generate",
-        "generate-node",
+        "generate-collections",
         "generate-defaults",
-        "generate-collections"
+        "generate-node"
       ]
     }
   }
