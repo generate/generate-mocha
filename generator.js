@@ -122,16 +122,18 @@ module.exports = function(app, base) {
 
   app.task('test', ['templates', 'dest'], function(cb) {
     app.debug('generating default test.js file');
-    app.fillin('dest', app.cwd);
+    var dest = app.option('dest') || app.cwd;
+    var test = app.option('test') || 'test.js';
 
-    app.toStream('templates', filter(app.options))
-      .pipe(app.renderFile('*', app.options))
+    app.toStream('templates')
+      .pipe(filter(test))
+      .pipe(app.renderFile('*'))
       .pipe(app.renameFile(function(file) {
         file.stem = 'test';
         return file;
       }))
-      .pipe(app.conflicts(app.option('dest')))
-      .pipe(app.dest(app.option('dest')))
+      .pipe(app.conflicts(dest))
+      .pipe(app.dest(dest))
       .on('error', cb)
       .on('end', function() {
         app.npm.askInstall('mocha', cb);
@@ -149,15 +151,19 @@ module.exports = function(app, base) {
  * Filter files to be rendered
  */
 
-function filter(opts) {
-  if (Array.isArray(opts.files)) {
-    return opts.files;
-  }
-  return function(key, file) {
-    if (opts.tmpl === 'base' && file.stem === 'test-base') {
-      file.basename = 'test.js';
-      return true;
+function filter(pattern, options) {
+  var isMatch = utils.match.matcher(pattern, options);
+
+  return utils.through.obj(function(file, enc, next) {
+    if (file.isNull()) {
+      next();
+      return;
     }
-    return opts.tmpl === key || utils.match(opts.tmpl, file);
-  };
+
+    if (isMatch(file)) {
+      next(null, file);
+    } else {
+      next();
+    }
+  });
 }
