@@ -3,7 +3,7 @@
 require('mocha');
 var assert = require('assert');
 var File = require('vinyl');
-var <%= camelcase(alias) %> = require('<%= relative(dest) %>');
+var <%= camelcase(alias) %> = require('<%= relative(options.dest) %>');
 
 describe('<%= name %>', function() {  
   {% body %}

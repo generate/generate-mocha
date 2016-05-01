@@ -61,8 +61,7 @@ module.exports = function(app, base) {
 
   app.helper('camelcase', require('camel-case'));
   app.helper('relative', function(dest) {
-    dest = path.resolve(dest || this.options.dest || '.');
-    return dest !== this.app.cwd ? path.relative(dest, this.app.cwd) : './';
+    return (dest !== this.app.cwd) ? path.relative(dest, this.app.cwd) : './';
   });
 
   /**
@@ -156,6 +155,9 @@ module.exports = function(app, base) {
     app.debug('generating default test.js file');
     var dest = app.option('dest') || app.cwd;
     var test = app.option('test') || 'test.js';
+
+    // add `options` to the context
+    app.data({ options: app.options });
 
     app.toStream('templates')
       .pipe(filter(test))
