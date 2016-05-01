@@ -1,14 +1,10 @@
 'use strict';
 
 var path = require('path');
+var opts = {alias: {tmpl: 't'}, default: {tmpl: 'test.js'}};
+var argv = require('minimist')(process.argv.slice(2), opts);
 var debug = require('debug')('generate:mocha');
 var utils = require('./lib/utils');
-var argv = require('minimist')(process.argv.slice(2), {
-  alias: {tmpl: 't'},
-  default: {
-    tmpl: 'test.js'
-  }
-});
 
 /**
  * Extend your generator with the features and settings of this
@@ -18,7 +14,6 @@ var argv = require('minimist')(process.argv.slice(2), {
  * app.extendWith(require('generate-mocha'));
  * ```
  * @param {Object} `app` generator instance
- * @api public
  */
 
 module.exports = function(app, base) {
@@ -45,25 +40,25 @@ module.exports = function(app, base) {
    * Set options
    */
 
-  app.option(base.options);
-  app.option(argv);
-  app.option({delims: ['<%', '%>']});
-  app.option('renameFile', function(file) {
-    file.stem = 'test';
-    return file;
-  });
+  app
+    .option(base.options)
+    .option(argv)
+    .option({delims: ['<%', '%>']})
+    .option('renameFile', function(file) {
+      file.stem = 'test';
+      return file;
+    });
 
   /**
-   * Pipeline plugins
+   * Register pipeline plugins
    */
 
   app.plugin('rename', rename);
 
   /**
-   * Helpers
+   * Register helpers
    */
 
-  // app.helpers(require('template-helpers'));
   app.helper('camelcase', require('camel-case'));
   app.helper('relative', function(dest) {
     dest = path.resolve(dest || this.options.dest || '.');
@@ -71,7 +66,26 @@ module.exports = function(app, base) {
   });
 
   /**
-   * Pre-load templates (needs to be done after collections are created)
+   * Generate a `test.js` file to the user's working directory. Alias for the [test]() task.
+   *
+   * ```sh
+   * $ gen mocha
+   * ```
+   * @name default
+   * @api public
+   */
+
+  app.task('default', ['test']);
+
+  /**
+   * Pre-load templates. This is called by the [default](#default) task, but if you call
+   * this task directly make sure it's called after collections are created.
+   *
+   * ```sh
+   * $ gen mocha:templates
+   * ```
+   * @name templates
+   * @api public
    */
 
   app.task('templates', function(cb) {
@@ -95,7 +109,14 @@ module.exports = function(app, base) {
   });
 
   /**
-   * Prompt the user for the `dest` to use
+   * Prompt the user for the `dest` directory to use for the generated test file(s).
+   * Called by the [default]() task.
+   *
+   * ```sh
+   * $ gen mocha:dest
+   * ```
+   * @name dest
+   * @api public
    */
 
   app.task('dest', function(cb) {
@@ -108,16 +129,27 @@ module.exports = function(app, base) {
   });
 
   /**
-   * Initiate a prompt session that asks the user
-   * which files to write to disk.
+   * Initiate a prompt session to ask the user which files to write to disk.
+   *
+   * ```sh
+   * $ gen mocha:files
+   * ```
+   * @name files
+   * @api public
    */
 
-  app.task('choose', ['templates', 'dest'], function(cb) {
+  app.task('files', ['templates', 'dest'], function(cb) {
     app.chooseFiles(app.options, cb);
   });
 
   /**
-   * Write a `test.js` file to the user's working directory
+   * Generate a `test.js` file to the user's working directory.
+   *
+   * ```sh
+   * $ gen mocha:test
+   * ```
+   * @name test
+   * @api public
    */
 
   app.task('test', ['templates', 'dest'], function(cb) {
@@ -139,12 +171,6 @@ module.exports = function(app, base) {
         app.npm.askInstall('mocha', cb);
       });
   });
-
-  /**
-   * Default question
-   */
-
-  app.task('default', ['test']);
 };
 
 /**
