@@ -1,7 +1,7 @@
 {
   "name": "generate-mocha",
   "description": "Generate mocha test files.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "homepage": "https://github.com/generate/generate-mocha",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "generate/generate-mocha",
@@ -29,9 +29,9 @@
     "debug": "^2.2.0",
     "extend-shallow": "^2.0.1",
     "generate-collections": "^0.2.1",
-    "generate-defaults": "^0.2.0",
+    "generate-defaults": "^0.2.1",
     "kind-of": "^3.0.2",
-    "lazy-cache": "^1.0.3",
+    "lazy-cache": "^2.0.0",
     "match-file": "^0.2.0",
     "minimist": "^1.2.0",
     "mixin-deep": "^1.1.3",
@@ -39,12 +39,12 @@
   },
   "devDependencies": {
     "engine-base": "^0.1.2",
-    "generate": "^0.5.2",
-    "gulp": "^3.9.0",
-    "gulp-eslint": "^1.0.0",
+    "generate": "^0.5.4",
+    "gulp": "^3.9.1",
+    "gulp-eslint": "^2.0.0",
     "gulp-format-md": "^0.1.9",
-    "gulp-istanbul": "^0.10.2",
-    "gulp-mocha": "^2.1.3",
+    "gulp-istanbul": "^0.10.4",
+    "gulp-mocha": "^2.2.0",
     "gulp-unused": "^0.1.2",
     "mocha": "^2.4.5"
   },
@@ -70,7 +70,7 @@
     ],
     "run": true,
     "toc": true,
-    "layout": "default",
+    "layout": "global",
     "lint": {
       "reflinks": true
     },
@@ -80,8 +80,8 @@
     "related": {
       "list": [
         "generate",
-        "generate-collections",
-        "generate-defaults",
+        "generate-git",
+        "generate-license",
         "generate-node"
       ]
     }
