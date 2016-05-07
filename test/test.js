@@ -3,12 +3,12 @@
 require('mocha');
 var assert = require('assert');
 var generate = require('generate');
-var generator = require('..');
+var mocha = require('..');
 var app;
 
 describe('generate-node', function() {
   beforeEach(function() {
-    app = generate();
+    app = generate({silent: true});
   });
 
   describe('plugin', function() {
@@ -19,24 +19,24 @@ describe('generate-node', function() {
           count++;
         }
       });
-      app.use(generator);
-      app.use(generator);
-      app.use(generator);
+      app.use(mocha);
+      app.use(mocha);
+      app.use(mocha);
       assert.equal(count, 1);
       cb();
     });
   });
 
-  describe('generator', function() {
+  describe('generate-mocha', function() {
     it('should add a generator to the instance', function(cb) {
-      app.use(generator);
+      app.use(mocha);
       assert.equal(typeof app.files, 'function');
       assert.equal(typeof app.includes, 'function');
       assert.equal(typeof app.layouts, 'function');
       cb();
     });
 
-    it('should create custom generator passed on app options', function() {
+    it('should work as a generator', function() {
       app.option({
         create: {
           snippet: { viewType: 'partial' },
@@ -46,137 +46,201 @@ describe('generate-node', function() {
       });
 
       app.generator('foo', function(foo) {
-        foo.use(generator);
+        foo.use(mocha);
         assert(foo.views.hasOwnProperty('snippets'));
         assert(foo.views.hasOwnProperty('sections'));
         assert(foo.views.hasOwnProperty('blocks'));
       });
     });
+  });
 
-    it('should create custom generator passed on generator options', function() {
-      app.generator('foo', function(foo) {
-        foo.option({
+  describe('generator', function() {
+    it('should extend a generator', function(cb) {
+      app.generator('foo', function(sub) {
+        sub.use(mocha);
+        assert(sub.views.hasOwnProperty('files'));
+        assert(sub.views.hasOwnProperty('layouts'));
+        assert(sub.views.hasOwnProperty('includes'));
+        cb();
+      });
+    });
+
+    it('should register as a sub-generator', function(cb) {
+      app.generator('foo', function(sub) {
+        sub.register('mocha', mocha);
+        assert(sub.generators.hasOwnProperty('mocha'));
+        cb();
+      });
+    });
+
+    it('should run tasks as a sub-generator', function(cb) {
+      app = generate({silent: true, cli: true});
+
+      app.generator('foo', function(sub) {
+        sub.register('mocha', require('..'));
+        sub.generate('mocha:unit-test', cb);
+      });
+    });
+  });
+
+  describe('collections', function() {
+    it('should create custom template collections passed on **app** options', function() {
+      app.option({
+        create: {
+          snippet: { viewType: 'partial' },
+          section: { viewType: 'partial' },
+          block: { viewType: 'layout' }
+        }
+      });
+
+      app.generator('foo', function(sub) {
+        sub.use(mocha);
+        assert(sub.views.hasOwnProperty('snippets'));
+        assert(sub.views.hasOwnProperty('sections'));
+        assert(sub.views.hasOwnProperty('blocks'));
+      });
+    });
+
+    it('should create custom template collections passed on **generator** options', function() {
+      app.generator('foo', function(sub) {
+        sub.option({
           create: {
             snippet: { viewType: 'partial' },
             section: { viewType: 'partial' },
             block: { viewType: 'layout' }
           }
         });
-        foo.use(generator);
-        assert(foo.views.hasOwnProperty('snippets'));
-        assert(foo.views.hasOwnProperty('sections'));
-        assert(foo.views.hasOwnProperty('blocks'));
+        sub.use(mocha);
+        assert(sub.views.hasOwnProperty('snippets'));
+        assert(sub.views.hasOwnProperty('sections'));
+        assert(sub.views.hasOwnProperty('blocks'));
       });
     });
+  });
 
-    it('should extend a generator', function(cb) {
-      app.generator('foo', function(foo) {
-        foo.use(generator);
-        assert(foo.views.hasOwnProperty('files'));
-        assert(foo.views.hasOwnProperty('layouts'));
-        assert(foo.views.hasOwnProperty('includes'));
-        cb();
-      });
-    });
-
+  describe('templates', function() {
     it('should not change layouts defined on layouts', function(cb) {
-      app.generator('foo', function(app) {
-        app.extendWith(generator);
-        app.engine('*', require('engine-base'));
+      app.generator('foo', function(sub) {
+        sub.extendWith(mocha);
 
-        app.task('render', function(cb) {
-          app.layout('default', {content: 'one {% body %} two'});
-          app.layout('base', {content: 'three {% body %} four', layout: 'default'});
-          app.file('foo.md', {content: 'this is foo', layout: 'base'});
+        sub.task('render', function(next) {
+          sub.layout('default', {content: 'one {% body %} two'});
+          sub.layout('base', {content: 'three {% body %} four', layout: 'default'});
+          sub.file('foo.md', {content: 'this is foo', layout: 'base'});
 
-          app.toStream('files')
-            .pipe(app.renderFile('*'))
-            .pipe(app.dest('test/actual'))
-            .on('end', cb);
+          sub.toStream('files')
+            .pipe(sub.renderFile('*'))
+            .pipe(sub.dest('test/actual'))
+            .on('end', next);
         });
 
-        app.build('render', function(err) {
+        sub.build('render', function(err) {
           if (err) return cb(err);
-          assert.equal(app.layouts.getView('base').layout, 'default');
-          assert.equal(app.files.getView('foo').layout, 'base');
+          assert.equal(sub.layouts.getView('base').layout, 'default');
+          assert.equal(sub.files.getView('foo').layout, 'base');
           cb();
         });
       });
     });
 
     it('should set layout to `null` on partials with "default" defined', function(cb) {
-      app.generator('foo', function(app) {
-        app.extendWith(generator);
-        app.engine('*', require('engine-base'));
+      app.generator('foo', function(sub) {
+        sub.extendWith(mocha);
 
-        app.task('render', function(cb) {
-          app.layout('default', {content: '{% body %}'});
-          app.include('overview.md', {content: 'this is overview', layout: 'default'});
-          app.file('foo.md', {content: 'this is <%= include("overview.md") %>'});
+        sub.task('render', function(next) {
+          sub.layout('default', {content: '{% body %}'});
+          sub.include('overview.md', {content: 'this is overview', layout: 'default'});
+          sub.file('foo.md', {content: 'this is <%= include("overview.md") %>'});
 
-          app.toStream('files')
-            .pipe(app.renderFile('*'))
-            .pipe(app.dest('test/actual'))
-            .on('end', cb);
+          sub.toStream('files')
+            .pipe(sub.renderFile('*'))
+            .pipe(sub.dest('test/actual'))
+            .on('end', next);
         });
 
-        app.build('render', function(err) {
+        sub.build('render', function(err) {
           if (err) return cb(err);
-          assert.equal(app.files.getView('foo').layout, 'empty');
-          assert.equal(app.includes.getView('overview').layout, null);
+          assert.equal(sub.files.getView('foo').layout, 'empty');
+          assert.equal(sub.includes.getView('overview').layout, null);
           cb();
         });
       });
     });
 
     it('should set `partialLayout` on view.layout', function(cb) {
-      app.generator('foo', function(app) {
-        app.extendWith(generator);
-        app.engine('*', require('engine-base'));
+      app.generator('foo', function(sub) {
+        sub.extendWith(mocha);
 
-        app.task('render', function(cb) {
-          app.layout('default.md', {content: '{% body %}'});
-          app.layout('whatever.md', {content: '{% body %}'});
-          app.include('overview.md', {content: 'this is overview', partialLayout: 'whatever'});
-          app.file('foo.md', {content: 'this is <%= include("overview.md") %>'});
+        sub.task('render', function(next) {
+          sub.layout('default.md', {content: '{% body %}'});
+          sub.layout('whatever.md', {content: '{% body %}'});
+          sub.include('overview.md', {content: 'this is overview', partialLayout: 'whatever'});
+          sub.file('foo.md', {content: 'this is <%= include("overview.md") %>'});
 
-          app.toStream('files')
-            .pipe(app.renderFile('*'))
-            .pipe(app.dest('test/actual'))
-            .on('end', cb);
+          sub.toStream('files')
+            .pipe(sub.renderFile('*'))
+            .pipe(sub.dest('test/actual'))
+            .on('end', next);
         });
 
-        app.build('render', function(err) {
+        sub.build('render', function(err) {
           if (err) return cb(err);
-          assert.equal(app.files.getView('foo').layout, 'empty');
-          assert.equal(app.includes.getView('overview').layout, 'whatever');
+          assert.equal(sub.files.getView('foo').layout, 'empty');
+          assert.equal(sub.includes.getView('overview').layout, 'whatever');
           cb();
         });
       });
     });
 
     it('should set layout to `empty` on renderable templates with no layout', function(cb) {
-      app.generator('foo', function(app) {
-        app.extendWith(generator);
-        app.engine('*', require('engine-base'));
+      app.generator('foo', function(sub) {
+        sub.extendWith(mocha);
 
-        app.task('render', function(cb) {
-          app.layout('default', {content: '{% body %}'});
-          app.file('foo.md', {content: 'this is foo'});
+        sub.task('render', function(next) {
+          sub.layout('default', {content: '{% body %}'});
+          sub.file('foo.md', {content: 'this is foo'});
 
-          app.toStream('files')
-            .pipe(app.renderFile('*'))
-            .pipe(app.dest('test/actual'))
-            .on('end', cb);
+          sub.toStream('files')
+            .pipe(sub.renderFile('*'))
+            .pipe(sub.dest('test/actual'))
+            .on('end', next);
         });
 
-        app.build('render', function(err) {
+        sub.build('render', function(err) {
           if (err) return cb(err);
 
-          assert.equal(app.files.getView('foo').layout, 'empty');
+          assert.equal(sub.files.getView('foo').layout, 'empty');
           cb();
         });
       });
     });
   });
+
+  describe('variables', function() {
+    it('should expose `alias` to the context', function(done) {
+      app.generator('sub', function(sub) {
+        sub.extendWith(mocha);
+
+        sub.task('render', function(cb) {
+          var file = sub.file('sub.md', {content: 'foo <%= alias %> bar'});
+
+          sub.toStream('files')
+            .pipe(sub.renderFile('*'))
+            .pipe(sub.dest('test/actual'))
+            .on('end', function() {
+              assert.equal(file.content, 'foo mocha bar');
+              cb();
+            });
+        });
+
+        sub.build('render', done);
+      });
+    });
+  });
 });
+
+function render(cb) {
+
+
+  sub.build('render', done)
+}

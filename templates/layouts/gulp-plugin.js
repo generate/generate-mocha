@@ -1,3 +1,6 @@
+---
+install: ['vinyl']
+---
 'use strict';
 
 require('mocha');

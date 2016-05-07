@@ -1,3 +1,6 @@
+---
+install: ['base']
+---
 'use strict';
 
 require('mocha');
