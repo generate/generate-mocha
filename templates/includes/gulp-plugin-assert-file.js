@@ -1,5 +1,5 @@
   it('should export an object', function(cb) {
-    var stream = <%= camelcase(alias) %>();
+    var stream = <%= camelcase(project.alias) %>();
     var buffer = [];
 
     stream.write(new File({
