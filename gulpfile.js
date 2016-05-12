@@ -25,7 +25,7 @@ gulp.task('lint', function() {
 });
 
 gulp.task('unused', function() {
-  return gulp.src(['*.js', 'lib/*.js'])
+  return gulp.src(['generator.js', 'lib/*.js'])
     .pipe(unused({keys: Object.keys(require('./lib/utils.js'))}));
 });
 
