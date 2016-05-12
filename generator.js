@@ -6,21 +6,11 @@ var argv = require('minimist')(process.argv.slice(2), opts);
 var debug = require('debug')('generate:mocha');
 var utils = require('./lib/utils');
 
-/**
- * Extend your generator with the features and settings of this
- * generator using the `.extendWith` method.
- *
- * ```js
- * app.extendWith(require('generate-mocha'));
- * ```
- * @param {Object} `app` generator instance
- */
-
 module.exports = function(app, base) {
-  if (this.isRegistered('generate-mocha')) return;
+  if (app.isRegistered('generate-mocha')) return;
   debug('initializing <%s>, from <%s>', __filename, module.parent.id);
 
-  var templates = path.resolve.bind(path, __dirname, 'templates');
+  var cwd = path.resolve.bind(path, __dirname);
   var rename = require('./lib/rename');
   var files = require('./lib/files');
   var utils = require('./lib/utils');
@@ -32,8 +22,9 @@ module.exports = function(app, base) {
   app
     .use(require('generate-defaults'))
     .use(require('generate-collections'))
-    .use(utils.conflicts())
+    .use(utils.register())
     .use(rename())
+    .use(prompt())
     .use(files());
 
   /**
@@ -49,11 +40,9 @@ module.exports = function(app, base) {
       return file;
     });
 
-  /**
-   * Register pipeline plugins
-   */
-
-  app.plugin('rename', rename);
+  function dir(name) {
+    return app.option(name) || cwd(name);
+  }
 
   /**
    * Register helpers
@@ -63,18 +52,46 @@ module.exports = function(app, base) {
   app.helper('relative', function(dest) {
     return (dest !== this.app.cwd) ? path.relative(dest, this.app.cwd) : './';
   });
+  app.helper('strip', function(name, str) {
+    return str.replace('^' + new RegExp(str) + '\\W*', '');
+  });
 
   /**
-   * Generate a `test.js` file to the user's working directory. Alias for the [test]() task.
+   * Middleware
+   */
+
+  app.postRender(/\.js$/, function(view, next) {
+    app.union('cache.install', view.data.install);
+    next();
+  });
+
+  /**
+   * Register pipeline plugins
+   */
+
+  app.plugin('rename', rename);
+
+  /**
+   * Register sub-generators
+   */
+
+  app.register('generators/*/', {cwd: __dirname});
+
+  /**
+   * This task is used in unit tests to ensure this generator works in all intended
+   * scenarios.
    *
    * ```sh
-   * $ gen mocha
+   * $ gen mocha:unit-test
    * ```
-   * @name default
+   * @name unit-test
    * @api public
    */
 
-  app.task('default', ['test']);
+  app.task('unit-test', function(cb) {
+    app.base.set('cache.unit-test', true);
+    cb();
+  });
 
   /**
    * Pre-load templates. This is called by the [default](#default) task, but if you call
@@ -87,23 +104,45 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('templates', function(cb) {
+  app.task('templates', { silent: true }, function(cb) {
     app.debug('loading templates');
 
     app.includes.option('renameKey', function(key, file) {
       return file ? file.stem : path.basename(key, path.extname(key));
     });
 
-    app.includes('*.js', {cwd: templates('includes')});
-    app.layouts('*.js', {cwd: templates('layouts')});
+    app.includes('*.js', {cwd: dir('templates/includes')});
+    app.layouts('*.js', {cwd: dir('templates/layouts')});
     app.templates('*.js', {
-      cwd: templates(),
+      cwd: dir('templates'),
       renameKey: function(key, file) {
         return file ? file.basename : path.basename(key);
       }
     });
 
     app.debug('loaded templates');
+    cb();
+  });
+
+  /**
+   * Loads the `project.name` and `project.alias` questions onto the `question.queue`
+   * to be asked when the `.ask` method is called. This is called by the [default]() task.
+   *
+   * ```sh
+   * $ gen mocha:questions
+   * ```
+   * @name questions
+   * @api public
+   */
+
+  app.task('questions', { silent: true }, function(cb) {
+    app.debug('loading questions');
+    app.question('project.name', 'Project name?', {
+      default: app.data('name') || app.pkg.get('name')
+    });
+    app.question('project.alias', 'Project alias?', {
+      default: app.data('alias')
+    });
     cb();
   });
 
@@ -118,10 +157,11 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('dest', function(cb) {
-    app.question('dest', 'Destination directory?', {default: process.cwd()});
+  app.task('dest', { silent: true }, function(cb) {
+    app.question('dest', 'Destination directory?', {default: app.cwd});
     app.ask('dest', {save: false}, function(err, answers) {
       if (err) return cb(err);
+      answers.dest = path.resolve(app.cwd, answers.dest);
       app.option('dest', answers.dest);
       cb();
     });
@@ -137,6 +177,7 @@ module.exports = function(app, base) {
    * @api public
    */
 
+  app.task('choose', ['files']);
   app.task('files', ['templates', 'dest'], function(cb) {
     app.chooseFiles(app.options, cb);
   });
@@ -151,7 +192,7 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('test', ['templates', 'dest'], function(cb) {
+  app.task('mocha', ['questions', 'templates', 'dest'], function(cb) {
     app.debug('generating default test.js file');
     var dest = app.option('dest') || app.cwd;
     var test = app.option('test') || 'test.js';
@@ -173,6 +214,18 @@ module.exports = function(app, base) {
         app.npm.askInstall('mocha', cb);
       });
   });
+
+  /**
+   * Generate a `test.js` file to the user's working directory. Alias for the [test]() task.
+   *
+   * ```sh
+   * $ gen mocha
+   * ```
+   * @name default
+   * @api public
+   */
+
+  app.task('default', { silent: true }, ['mocha']);
 };
 
 /**
@@ -181,7 +234,6 @@ module.exports = function(app, base) {
 
 function filter(pattern, options) {
   var isMatch = utils.match.matcher(pattern, options);
-
   return utils.through.obj(function(file, enc, next) {
     if (file.isNull()) {
       next();
@@ -194,4 +246,21 @@ function filter(pattern, options) {
       next();
     }
   });
+}
+
+function prompt(options) {
+  return function(app) {
+    this.define('prompt', function(names) {
+      return utils.through.obj(function(file, enc, next) {
+        app.ask(names, {save: false}, function(err, answers) {
+          if (err) {
+            next(err);
+            return;
+          }
+          app.data(answers);
+          next(null, file);
+        });
+      });
+    });
+  };
 }

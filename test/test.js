@@ -6,7 +6,9 @@ var generate = require('generate');
 var mocha = require('..');
 var app;
 
-describe('generate-node', function() {
+describe('generate-mocha', function() {
+  this.slow(500);
+
   beforeEach(function() {
     app = generate({silent: true});
   });
@@ -78,7 +80,11 @@ describe('generate-node', function() {
 
       app.generator('foo', function(sub) {
         sub.register('mocha', require('..'));
-        sub.generate('mocha:unit-test', cb);
+        sub.generate('mocha:unit-test', function(err) {
+          if (err) return cb(err);
+          assert.equal(app.base.get('cache.unit-test'), true);
+          cb();
+        });
       });
     });
   });
@@ -238,9 +244,3 @@ describe('generate-node', function() {
     });
   });
 });
-
-function render(cb) {
-
-
-  sub.build('render', done)
-}
