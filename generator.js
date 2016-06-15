@@ -80,20 +80,16 @@ module.exports = function(app, base, env, options) {
   app.register('generators/*/', {cwd: __dirname});
 
   /**
-   * This task is used in unit tests to ensure this generator works in all intended
-   * scenarios.
+   * Alias for the [test]() task. Allows the generator to be run with the following command:
    *
    * ```sh
-   * $ gen mocha:unit-test
+   * $ gen mocha
    * ```
-   * @name unit-test
+   * @name mocha:default
    * @api public
    */
 
-  app.task('unit-test', function(cb) {
-    app.base.set('cache.unit-test', true);
-    cb();
-  });
+  app.task('default', {silent: true}, ['mocha', 'post-generate']);
 
   /**
    * Pre-load templates. This is called by the [default](#default) task, but if you call
@@ -102,7 +98,7 @@ module.exports = function(app, base, env, options) {
    * ```sh
    * $ gen mocha:templates
    * ```
-   * @name templates
+   * @name mocha:templates
    * @api public
    */
 
@@ -127,21 +123,20 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Prompt the user for the `dest` directory to use for the generated test file(s).
-   * Called by the [default]() task.
+   * Prompt the user to save preferences and automatically use them on the next run.
    *
    * ```sh
-   * $ gen mocha:dest
+   * $ gen mocha:prompt-preferences
    * ```
-   * @name dest
+   * @name mocha:prompt-preferences
    * @api public
    */
 
-  app.task('prompt-choices', {silent: true}, function(cb) {
-    app.confirm('choices', 'Want to automatically install mocha next time?');
-    app.ask('choices', {save: false}, function(err, answers) {
+  app.task('prompt-preferences', {silent: true}, function(cb) {
+    app.confirm('preferences', 'Want to automatically install mocha next time?');
+    app.ask('preferences', {save: false}, function(err, answers) {
       if (err) return cb(err);
-      if (answers.choices) {
+      if (answers.preferences) {
         store.set('install', true);
       }
       cb();
@@ -192,9 +187,9 @@ module.exports = function(app, base, env, options) {
    * be prompted) after files are generated then next time the generator is run.
    *
    * ```sh
-   * $ gen node:post-generate
+   * $ gen mocha:post-generate
    * ```
-   * @name post-generate
+   * @name mocha:post-generate
    * @api public
    */
 
@@ -216,12 +211,14 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Generate a `test.js` file to the user's working directory.
+   * Generate a `test.js` file in the cwd or specified directory. This task
+   * is called by the default task. We alias the task as `mocha:mocha` to make
+   * it easier for other generators to run it programmatically.
    *
    * ```sh
-   * $ gen mocha:test
+   * $ gen mocha:mocha
    * ```
-   * @name test
+   * @name mocha:mocha
    * @api public
    */
 
@@ -247,16 +244,20 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Generate a `test.js` file to the user's working directory. Alias for the [test]() task.
+   * This task is used in unit tests to ensure this generator works in all intended
+   * scenarios.
    *
    * ```sh
-   * $ gen mocha
+   * $ gen mocha:unit-test
    * ```
-   * @name default
+   * @name mocha:unit-test
    * @api public
    */
 
-  app.task('default', {silent: true}, ['mocha', 'post-generate']);
+  app.task('unit-test', function(cb) {
+    app.base.set('cache.unit-test', true);
+    cb();
+  });
 };
 
 /**

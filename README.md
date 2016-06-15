@@ -96,17 +96,17 @@ $ gen mocha --basename foo.whatever
 
 ## Tasks
 
-### [unit-test](generator.js#L95)
+### [mocha:default](generator.js#L92)
 
-This task is used in unit tests to ensure this generator works in all intended scenarios.
+Alias for the [test](#test) task. Allows the generator to be run with the following command:
 
 **Example**
 
 ```sh
-$ gen mocha:unit-test
+$ gen mocha
 ```
 
-### [templates](generator.js#L111)
+### [mocha:templates](generator.js#L105)
 
 Pre-load templates. This is called by the [default](#default) task, but if you call this task directly make sure it's called after collections are created.
 
@@ -116,27 +116,17 @@ Pre-load templates. This is called by the [default](#default) task, but if you c
 $ gen mocha:templates
 ```
 
-### [questions](generator.js#L142)
+### [mocha:prompt-preferences](generator.js#L135)
 
-Loads the `project.name` and `project.alias` questions onto the `question.queue` to be asked when the `.ask` method is called. This is called by the [default](#default) task.
-
-**Example**
-
-```sh
-$ gen mocha:questions
-```
-
-### [dest](generator.js#L168)
-
-Prompt the user for the `dest` directory to use for the generated test file(s). Called by the [default](#default) task.
+Prompt the user to save preferences and automatically use them on the next run.
 
 **Example**
 
 ```sh
-$ gen mocha:dest
+$ gen mocha:prompt-preferences
 ```
 
-### [mocha:prompt-install](generator.js#L190)
+### [mocha:prompt-install](generator.js#L157)
 
 Prompt the user to install any necessary dependencies after generated files are written to the file system.
 
@@ -146,7 +136,7 @@ Prompt the user to install any necessary dependencies after generated files are 
 $ gen mocha:prompt-install
 ```
 
-### [mocha:install](generator.js#L207)
+### [mocha:install](generator.js#L174)
 
 Install any dependencies listed on `app.cache.install`.
 
@@ -156,7 +146,7 @@ Install any dependencies listed on `app.cache.install`.
 $ gen mocha:install
 ```
 
-### [post-generate](generator.js#L229)
+### [mocha:post-generate](generator.js#L196)
 
 Asks if you want to use the same "post-generate" choices next time this generator is run. If you change your mind, just run `gen node:choices` and you'll be prompted again.
 
@@ -168,27 +158,27 @@ be prompted) after files are generated then next time the generator is run.
 **Example**
 
 ```sh
-$ gen node:post-generate
+$ gen mocha:post-generate
 ```
 
-### [test](generator.js#L256)
+### [mocha:mocha](generator.js#L225)
 
-Generate a `test.js` file to the user's working directory.
+Generate a `test.js` file in the cwd or specified directory. This task is called by the default task. We alias the task as `mocha:mocha` to make it easier for other generators to run it programmatically.
 
 **Example**
 
 ```sh
-$ gen mocha:test
+$ gen mocha:mocha
 ```
 
-### [default](generator.js#L287)
+### [mocha:unit-test](generator.js#L257)
 
-Generate a `test.js` file to the user's working directory. Alias for the [test](#test) task.
+This task is used in unit tests to ensure this generator works in all intended scenarios.
 
 **Example**
 
 ```sh
-$ gen mocha
+$ gen mocha:unit-test
 ```
 
 ## API
@@ -284,7 +274,7 @@ $ npm install -d && npm test
 ## License
 
 Copyright © 2016, [Jon Schlinkert](https://github.com/jonschlinkert).
-Released under the [MIT license](LICENSE).
+Released under the [MIT license](https://github.com/generate/generate-mocha/blob/master/LICENSE).
 
 ***
 
