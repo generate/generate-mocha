@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "base-fs-conflicts": "^0.1.6",
-    "base-register": "^0.1.0",
+    "base-register": "^0.1.1",
     "camel-case": "^3.0.0",
     "common-questions": "^0.2.4",
     "data-store": "^0.16.0",
