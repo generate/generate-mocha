@@ -127,32 +127,6 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Loads the `project.name` and `project.alias` questions onto the `question.queue`
-   * to be asked when the `.ask` method is called. This is called by the [default]() task.
-   *
-   * ```sh
-   * $ gen mocha:questions
-   * ```
-   * @name questions
-   * @api public
-   */
-
-  // app.task('questions', {silent: true}, function(cb) {
-  //   debug('loading questions');
-  //   app.data(base.cache.data);
-
-  //   app.question('project.name', 'Project name?', {
-  //     default: app.data('name') || app.pkg.get('name')
-  //   });
-  //   app.question('project.alias', 'Project alias?', {
-  //     default: app.data('alias')
-  //   });
-
-  //   debug('loaded questions');
-  //   cb();
-  // });
-
-  /**
    * Prompt the user for the `dest` directory to use for the generated test file(s).
    * Called by the [default]() task.
    *
@@ -163,11 +137,11 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('prompt-save-choices', {silent: true}, function(cb) {
-    app.confirm('save-choices', 'Want to automatically install mocha next time?');
-    app.ask('save-choices', {save: false}, function(err, answers) {
+  app.task('prompt-choices', {silent: true}, function(cb) {
+    app.confirm('choices', 'Want to automatically install mocha next time?');
+    app.ask('choices', {save: false}, function(err, answers) {
       if (err) return cb(err);
-      if (answers['save-choices']) {
+      if (answers.choices) {
         store.set('install', true);
       }
       cb();
