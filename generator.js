@@ -1,38 +1,46 @@
 'use strict';
 
 var path = require('path');
+var debug = require('debug')('generate:mocha');
 var opts = {alias: {tmpl: 't'}, default: {tmpl: 'test.js'}};
 var argv = require('minimist')(process.argv.slice(2), opts);
 var debug = require('debug')('generate:mocha');
+var rename = require('./lib/rename');
 var utils = require('./lib/utils');
 
-module.exports = function(app, base) {
-  if (app.isRegistered('generate-mocha')) return;
-  debug('initializing <%s>, from <%s>', __filename, module.parent.id);
-
-  var cwd = path.resolve.bind(path, __dirname);
-  var rename = require('./lib/rename');
-  var files = require('./lib/files');
-  var utils = require('./lib/utils');
+module.exports = function(app, base, env, options) {
+  if (!utils.isValid(app, 'generate-mocha')) return;
 
   /**
-   * Register instance plugins
+   * Config store for user-defined, generator-specific defaults
    */
 
-  app
-    .use(require('generate-defaults'))
+  var store = new utils.DataStore('generate-mocha');
+
+  /**
+   * Paths
+   */
+
+  var cwd = path.resolve.bind(path, __dirname);
+  function dir(name) {
+    return app.option(name) || cwd(name);
+  }
+
+  /**
+   * Instance plugins
+   */
+
+  app.use(require('generate-defaults'))
     .use(require('generate-collections'))
     .use(utils.register())
     .use(rename())
     .use(prompt())
-    .use(files());
 
   /**
-   * Set options
+   * Options
    */
 
-  app
-    .option(base.options)
+  app.option(base.options)
     .option(argv)
     .option({delims: ['<%', '%>']})
     .option('renameFile', function(file) {
@@ -40,12 +48,8 @@ module.exports = function(app, base) {
       return file;
     });
 
-  function dir(name) {
-    return app.option(name) || cwd(name);
-  }
-
   /**
-   * Register helpers
+   * Helpers
    */
 
   app.helper('camelcase', require('camel-case'));
@@ -66,13 +70,13 @@ module.exports = function(app, base) {
   });
 
   /**
-   * Register pipeline plugins
+   * Pipeline plugins
    */
 
   app.plugin('rename', rename);
 
   /**
-   * Register sub-generators
+   * Sub-generators
    */
 
   app.register('generators/*/', {cwd: __dirname});
@@ -104,8 +108,8 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('templates', { silent: true }, function(cb) {
-    app.debug('loading templates');
+  app.task('templates', {silent: true}, function(cb) {
+    debug('loading templates');
 
     app.includes.option('renameKey', function(key, file) {
       return file ? file.stem : path.basename(key, path.extname(key));
@@ -120,7 +124,7 @@ module.exports = function(app, base) {
       }
     });
 
-    app.debug('loaded templates');
+    debug('loaded templates');
     cb();
   });
 
@@ -135,14 +139,18 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('questions', { silent: true }, function(cb) {
-    app.debug('loading questions');
+  app.task('questions', {silent: true}, function(cb) {
+    debug('loading questions');
+    app.data(base.cache.data);
+
     app.question('project.name', 'Project name?', {
       default: app.data('name') || app.pkg.get('name')
     });
     app.question('project.alias', 'Project alias?', {
       default: app.data('alias')
     });
+
+    debug('loaded questions');
     cb();
   });
 
@@ -157,29 +165,82 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('dest', { silent: true }, function(cb) {
-    app.question('dest', 'Destination directory?', {default: app.cwd});
-    app.ask('dest', {save: false}, function(err, answers) {
+  app.task('prompt-save-choices', {silent: true}, function(cb) {
+    app.confirm('save-choices', 'Want to automatically install mocha next time?');
+    app.ask('save-choices', {save: false}, function(err, answers) {
       if (err) return cb(err);
-      answers.dest = path.resolve(app.cwd, answers.dest);
-      app.option('dest', answers.dest);
+      if (answers['save-choices']) {
+        store.set('install', true);
+      }
       cb();
     });
   });
 
   /**
-   * Initiate a prompt session to ask the user which files to write to disk.
+   * Prompt the user to install any necessary dependencies after generated files
+   * are written to the file system.
    *
    * ```sh
-   * $ gen mocha:files
+   * $ gen mocha:prompt-install
    * ```
-   * @name files
+   * @name mocha:prompt-install
    * @api public
    */
 
-  app.task('choose', ['files']);
-  app.task('files', ['templates', 'dest'], function(cb) {
-    app.chooseFiles(app.options, cb);
+  app.task('prompt-install', {silent: true}, function(cb) {
+    app.npm.askInstall('mocha', function(err) {
+      if (err) return cb(err);
+      app.build('prompt-choices', cb);
+    });
+  });
+
+  /**
+   * Install any dependencies listed on `app.cache.install`.
+   *
+   * ```sh
+   * $ gen mocha:install
+   * ```
+   * @name mocha:install
+   * @api public
+   */
+
+  app.task('install', {silent: true}, function(cb) {
+    app.npm.latest(app.get('cache.install') || 'mocha', cb);
+  });
+
+  /**
+   * Asks if you want to use the same "post-generate" choices next time this generator
+   * is run. If you change your mind, just run `gen node:choices` and you'll be prompted
+   * again.
+   *
+   * If `false`, the [prompt-mocha](), [prompt-npm](), and [prompt-git]() tasks will be
+   * run after files are generated then next time the generator is run.
+   *
+   * If `true`, the [mocha](), [npm](), and [git]() tasks will be run (and you will not
+   * be prompted) after files are generated then next time the generator is run.
+   *
+   * ```sh
+   * $ gen node:post-generate
+   * ```
+   * @name post-generate
+   * @api public
+   */
+
+  app.task('post-generate', {silent: true}, function(cb) {
+    var choices = store.get('choices') || options.choices;
+
+    // user wants to skip prompts
+    if (choices === true) {
+      app.build(['install'], cb);
+
+    // user wants to be prompted (don't ask about choices again)
+    } else if (choices === false) {
+      app.build(['prompt-install'], cb);
+
+    // user hasn't been asked yet
+    } else {
+      app.build(['prompt-install', 'prompt-choices'], cb);
+    }
   });
 
   /**
@@ -193,7 +254,7 @@ module.exports = function(app, base) {
    */
 
   app.task('mocha', ['questions', 'templates', 'dest'], function(cb) {
-    app.debug('generating default test.js file');
+    debug('generating default test.js file');
     var dest = app.option('dest') || app.cwd;
     var test = app.option('test') || 'test.js';
 
@@ -202,7 +263,7 @@ module.exports = function(app, base) {
 
     app.toStream('templates')
       .pipe(filter(test))
-      .pipe(app.renderFile('*'))
+      .pipe(app.renderFile('*', {project: {}}))
       .pipe(app.renameFile(function(file) {
         file.stem = 'test';
         return file;
@@ -210,9 +271,7 @@ module.exports = function(app, base) {
       .pipe(app.conflicts(dest))
       .pipe(app.dest(dest))
       .on('error', cb)
-      .on('end', function() {
-        app.npm.askInstall('mocha', cb);
-      });
+      .on('end', cb);
   });
 
   /**
@@ -225,7 +284,7 @@ module.exports = function(app, base) {
    * @api public
    */
 
-  app.task('default', { silent: true }, ['mocha']);
+  app.task('default', {silent: true}, ['mocha', 'post-generate']);
 };
 
 /**
