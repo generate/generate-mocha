@@ -1,7 +1,7 @@
 {
   "name": "generate-mocha",
   "description": "Generate mocha test files.",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "homepage": "https://github.com/generate/generate-mocha",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "generate/generate-mocha",
