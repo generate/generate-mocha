@@ -27,6 +27,7 @@
     "base-fs-conflicts": "^0.1.6",
     "base-register": "^0.1.0",
     "camel-case": "^3.0.0",
+    "common-questions": "^0.2.4",
     "data-store": "^0.16.0",
     "debug": "^2.2.0",
     "generate-collections": "^0.2.1",
@@ -43,14 +44,14 @@
   "devDependencies": {
     "base": "^0.11.0",
     "delete": "^0.3.2",
-    "generate": "^0.5.4",
+    "generate": "^0.7.3",
     "gulp": "^3.9.1",
     "gulp-eslint": "^2.0.0",
     "gulp-format-md": "^0.1.9",
-    "gulp-istanbul": "^0.10.4",
+    "gulp-istanbul": "^1.0.0",
     "gulp-mocha": "^2.2.0",
     "gulp-unused": "^0.1.2",
-    "mocha": "^2.4.5",
+    "mocha": "^2.5.3",
     "vinyl": "^1.1.1"
   },
   "keywords": [

@@ -32,6 +32,7 @@ module.exports = function(app, base, env, options) {
 
   app.use(require('generate-defaults'))
     .use(require('generate-collections'))
+    .use(utils.commonQuestions())
     .use(utils.register())
     .use(rename())
     .use(prompt())
@@ -53,9 +54,6 @@ module.exports = function(app, base, env, options) {
    */
 
   app.helper('camelcase', require('camel-case'));
-  app.helper('relative', function(dest) {
-    return (dest !== this.app.cwd) ? path.relative(dest, this.app.cwd) : './';
-  });
   app.helper('strip', function(name, str) {
     return str.replace('^' + new RegExp(str) + '\\W*', '');
   });
@@ -139,20 +137,20 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('questions', {silent: true}, function(cb) {
-    debug('loading questions');
-    app.data(base.cache.data);
+  // app.task('questions', {silent: true}, function(cb) {
+  //   debug('loading questions');
+  //   app.data(base.cache.data);
 
-    app.question('project.name', 'Project name?', {
-      default: app.data('name') || app.pkg.get('name')
-    });
-    app.question('project.alias', 'Project alias?', {
-      default: app.data('alias')
-    });
+  //   app.question('project.name', 'Project name?', {
+  //     default: app.data('name') || app.pkg.get('name')
+  //   });
+  //   app.question('project.alias', 'Project alias?', {
+  //     default: app.data('alias')
+  //   });
 
-    debug('loaded questions');
-    cb();
-  });
+  //   debug('loaded questions');
+  //   cb();
+  // });
 
   /**
    * Prompt the user for the `dest` directory to use for the generated test file(s).
@@ -253,7 +251,7 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('mocha', ['questions', 'templates', 'dest'], function(cb) {
+  app.task('mocha', ['questions', 'templates'], function(cb) {
     debug('generating default test.js file');
     var dest = app.option('dest') || app.cwd;
     var test = app.option('test') || 'test.js';
