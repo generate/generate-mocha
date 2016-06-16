@@ -57,9 +57,11 @@
   "keywords": [
     "create",
     "generate",
+    "generateplugin",
     "generator",
     "init",
     "mocha",
+    "plugin",
     "template",
     "test",
     "unit",

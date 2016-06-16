@@ -222,7 +222,7 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('mocha', ['questions', 'templates'], function(cb) {
+  app.task('mocha', ['templates'], function(cb) {
     debug('generating default test.js file');
     var dest = app.option('dest') || app.cwd;
     var test = app.option('test') || 'test.js';
