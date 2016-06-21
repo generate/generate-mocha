@@ -5,11 +5,11 @@ install: ['base', 'vinyl']
 
 require('mocha');
 var assert = require('assert');
-var <%= camelcase(project.alias) %> = require('<%= relative(options.dest) %>');
+var <%= camelcase(project.alias) %> = require('<%= relative(dest) %>');
 var Base = require('base');
 var app;
 
-describe('<%= ask("project.name") %>', function() {
+describe('<%= project.name %>', function() {
   beforeEach(function() {
     app = new Base();
     app.use(<%= camelcase(project.alias) %>());

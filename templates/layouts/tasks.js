@@ -2,7 +2,7 @@
 
 require('mocha');
 var assert = require('assert');
-var <%= camelcase(project.alias) %> = require('<%= relative(options.dest) %>');
+var <%= camelcase(project.alias) %> = require('<%= relative(dest) %>');
 var Base = require('base');
 var app;
 

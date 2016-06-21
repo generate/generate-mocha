@@ -6,7 +6,7 @@ install: ['vinyl']
 require('mocha');
 var assert = require('assert');
 var File = require('vinyl');
-var <%= camelcase(project.alias) %> = require('<%= relative(options.dest) %>');
+var <%= camelcase(project.alias) %> = require('<%= relative(dest) %>');
 
 describe('<%= ask("project.name") %>', function() {  
   {% body %}
