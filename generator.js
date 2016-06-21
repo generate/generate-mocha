@@ -32,7 +32,7 @@ module.exports = function(app, base, env, options) {
 
   app.use(require('generate-defaults'))
     .use(require('generate-collections'))
-    .use(utils.commonQuestions())
+    .use(require('generate-install'))
     .use(utils.register())
     .use(rename())
     .use(prompt())
@@ -57,14 +57,9 @@ module.exports = function(app, base, env, options) {
   app.helper('strip', function(name, str) {
     return str.replace('^' + new RegExp(str) + '\\W*', '');
   });
-
-  /**
-   * Middleware
-   */
-
-  app.postRender(/\.js$/, function(view, next) {
-    app.union('cache.install', view.data.install);
-    next();
+  app.helper('relative', function(dest) {
+    if (!dest) return '';
+    return (dest !== app.cwd) ? path.relative(dest, app.cwd) : './';
   });
 
   /**
@@ -102,7 +97,7 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('templates', {silent: true}, function(cb) {
+  app.task('templates', {silent: false}, function(cb) {
     debug('loading templates');
 
     app.includes.option('renameKey', function(key, file) {
@@ -126,53 +121,21 @@ module.exports = function(app, base, env, options) {
    * Prompt the user to save preferences and automatically use them on the next run.
    *
    * ```sh
-   * $ gen mocha:prompt-preferences
+   * $ gen mocha:prompt-choices
    * ```
-   * @name mocha:prompt-preferences
+   * @name mocha:prompt-choices
    * @api public
    */
 
-  app.task('prompt-preferences', {silent: true}, function(cb) {
-    app.confirm('preferences', 'Want to automatically install mocha next time?');
-    app.ask('preferences', {save: false}, function(err, answers) {
+  app.task('prompt-choices', {silent: true}, function(cb) {
+    app.confirm('choices', 'Want to automatically install mocha next time?');
+    app.ask('choices', {save: false}, function(err, answers) {
       if (err) return cb(err);
-      if (answers.preferences) {
+      if (answers.choices) {
         store.set('install', true);
       }
       cb();
     });
-  });
-
-  /**
-   * Prompt the user to install any necessary dependencies after generated files
-   * are written to the file system.
-   *
-   * ```sh
-   * $ gen mocha:prompt-install
-   * ```
-   * @name mocha:prompt-install
-   * @api public
-   */
-
-  app.task('prompt-install', {silent: true}, function(cb) {
-    app.npm.askInstall('mocha', function(err) {
-      if (err) return cb(err);
-      app.build('prompt-choices', cb);
-    });
-  });
-
-  /**
-   * Install any dependencies listed on `app.cache.install`.
-   *
-   * ```sh
-   * $ gen mocha:install
-   * ```
-   * @name mocha:install
-   * @api public
-   */
-
-  app.task('install', {silent: true}, function(cb) {
-    app.npm.latest(app.get('cache.install') || 'mocha', cb);
   });
 
   /**
@@ -194,19 +157,20 @@ module.exports = function(app, base, env, options) {
    */
 
   app.task('post-generate', {silent: true}, function(cb) {
-    var choices = store.get('choices') || options.choices;
+    var install = store.get('install') || options.install;
+    app.union('cache.install.devDependencies', ['mocha']);
 
     // user wants to skip prompts
-    if (choices === true) {
-      app.build(['install'], cb);
+    if (install === true) {
+      app.generate(['install'], cb);
 
-    // user wants to be prompted (don't ask about choices again)
-    } else if (choices === false) {
-      app.build(['prompt-install'], cb);
+    // user wants to be prompted (don't ask about installation again)
+    } else if (install === false) {
+      app.generate(['prompt-install'], cb);
 
     // user hasn't been asked yet
     } else {
-      app.build(['prompt-install', 'prompt-choices'], cb);
+      app.generate(['prompt-install', 'prompt-choices'], cb);
     }
   });
 
@@ -227,12 +191,18 @@ module.exports = function(app, base, env, options) {
     var dest = app.option('dest') || app.cwd;
     var test = app.option('test') || 'test.js';
 
-    // add `options` to the context
-    app.data({ options: app.options });
+    app.option('askWhen', 'not-answered');
+    if (app.options.alias) {
+      app.data('project.alias', app.options.alias);
+    }
+
+    // add `dest` to the context
+    app.data({ dest: dest });
+    app.cache.data.project = app.cache.data.project || {};
 
     app.toStream('templates')
       .pipe(filter(test))
-      .pipe(app.renderFile('*', {project: {}}))
+      .pipe(app.renderFile('*'))
       .pipe(app.renameFile(function(file) {
         file.stem = 'test';
         return file;
