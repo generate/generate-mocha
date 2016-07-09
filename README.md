@@ -6,7 +6,6 @@ Generate mocha test files.
 
 - [Install](#install)
 - [CLI](#cli)
-  * [Flags](#flags)
 - [Tasks](#tasks)
 - [API](#api)
   * [Usage](#usage)
@@ -51,62 +50,34 @@ Run the `mocha` generator from the command line:
 $ gen mocha
 ```
 
-### Flags
-
-#### --tmpl
-
-Choose the template to use.
-
-**Default**: [templates/test.js](templates/test.js)
-
-**Shortcut**: `-t`
-
-**Choices**:
-
-Currently the only choices are:
-
-* `base`: template for adding unit tests to [base](https://github.com/node-base/base) projects.
-* `test`: generic mocha unit tests template
-
-#### --stem
-
-Rename the `stem` of the destination file (basename excluding file extension):
-
-**Default**: `test`
-
-**Example**
-
-```sh
-$ gen mocha --stem foo
-# results in `foo.js`
-```
-
-#### --basename
-
-Rename the `basename` of the destination file.
-
-**Default**: `test.js`
-
-**Example**
-
-```sh
-$ gen mocha --basename foo.whatever
-# results in `foo.whatever`
-```
-
 ## Tasks
 
-### [mocha:default](generator.js#L92)
+### [generator](index.js#L84)
 
-Alias for the [test](#test) task. Allows the generator to be run with the following command:
+Generate unit tests for a [generate](https://github.com/generate/generate) generator. Creates:
+
+* `test.js`
+* `plugin.js`
 
 **Example**
 
 ```sh
-$ gen mocha
+$ gen mocha:gen
+# aliased as
+$ gen mocha:generator
 ```
 
-### [mocha:templates](generator.js#L105)
+### [base](index.js#L97)
+
+Generate a `test.js` file with unit tests for a [base](https://github.com/node-base/base) project.
+
+**Example**
+
+```sh
+$ gen mocha:base
+```
+
+### [mocha:templates](index.js#L110)
 
 Pre-load templates. This is called by the [default](#default) task, but if you call this task directly make sure it's called after collections are created.
 
@@ -116,37 +87,17 @@ Pre-load templates. This is called by the [default](#default) task, but if you c
 $ gen mocha:templates
 ```
 
-### [mocha:prompt-preferences](generator.js#L135)
+### [mocha:prompt-choices](index.js#L129)
 
 Prompt the user to save preferences and automatically use them on the next run.
 
 **Example**
 
 ```sh
-$ gen mocha:prompt-preferences
+$ gen mocha:prompt-choices
 ```
 
-### [mocha:prompt-install](generator.js#L157)
-
-Prompt the user to install any necessary dependencies after generated files are written to the file system.
-
-**Example**
-
-```sh
-$ gen mocha:prompt-install
-```
-
-### [mocha:install](generator.js#L174)
-
-Install any dependencies listed on `app.cache.install`.
-
-**Example**
-
-```sh
-$ gen mocha:install
-```
-
-### [mocha:post-generate](generator.js#L196)
+### [mocha:post-generate](index.js#L159)
 
 Asks if you want to use the same "post-generate" choices next time this generator is run. If you change your mind, just run `gen node:choices` and you'll be prompted again.
 
@@ -161,7 +112,7 @@ be prompted) after files are generated then next time the generator is run.
 $ gen mocha:post-generate
 ```
 
-### [mocha:mocha](generator.js#L225)
+### [mocha:mocha](index.js#L188)
 
 Generate a `test.js` file in the cwd or specified directory. This task is called by the default task. We alias the task as `mocha:mocha` to make it easier for other generators to run it programmatically.
 
@@ -171,7 +122,17 @@ Generate a `test.js` file in the cwd or specified directory. This task is called
 $ gen mocha:mocha
 ```
 
-### [mocha:unit-test](generator.js#L257)
+### [mocha:default](index.js#L214)
+
+Alias for the [test](#test) task. Allows the generator to be run with the following command:
+
+**Example**
+
+```sh
+$ gen mocha
+```
+
+### [mocha:unit-test](index.js#L227)
 
 This task is used in unit tests to ensure this generator works in all intended scenarios.
 
@@ -237,7 +198,7 @@ module.exports = function(app) {
 
 You might also be interested in these projects:
 
-* [generate](https://www.npmjs.com/package/generate): The Santa Claus machine for GitHub projects. Scaffolds out new projects, or creates any kind… [more](https://github.com/generate/generate) | [homepage](https://github.com/generate/generate "The Santa Claus machine for GitHub projects. Scaffolds out new projects, or creates any kind of required file or document from any given templates or source materials.")
+* [generate](https://www.npmjs.com/package/generate): Generate is a command line tool and developer framework for scaffolding out new GitHub projects… [more](https://github.com/generate/generate) | [homepage](https://github.com/generate/generate "Generate is a command line tool and developer framework for scaffolding out new GitHub projects. Generators are easy to create and combine. Answers to prompts and the user's environment can be used to determine the templates, directories, files and contents to build. Support for gulp, assemble and Base plugins.")
 * [generate-git](https://www.npmjs.com/package/generate-git): Generator for initializing a git repository and adding first commit. | [homepage](https://github.com/generate/generate-git "Generator for initializing a git repository and adding first commit.")
 * [generate-license](https://www.npmjs.com/package/generate-license): Generate a license file for a GitHub project. | [homepage](https://github.com/generate/generate-license "Generate a license file for a GitHub project.")
 * [generate-node](https://www.npmjs.com/package/generate-node): Generate a node.js project, with everything you need to begin writing code and easily publish… [more](https://github.com/generate/generate-node) | [homepage](https://github.com/generate/generate-node "Generate a node.js project, with everything you need to begin writing code and easily publish the project to npm.")
@@ -246,9 +207,13 @@ You might also be interested in these projects:
 
 This document was generated by [verb-readme-generator](https://github.com/verbose/verb-readme-generator) (a [verb](https://github.com/verbose/verb) generator), please don't edit directly. Any changes to the readme must be made in [.verb.md](.verb.md). See [Building Docs](#building-docs).
 
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new). Or visit the [verb-readme-generator](https://github.com/verbose/verb-readme-generator) project to submit bug reports or pull requests for the readme layout template.
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+
+Or visit the [verb-readme-generator](https://github.com/verbose/verb-readme-generator) project to submit bug reports or pull requests for the readme layout template.
 
 ## Building docs
+
+_(This document was generated by [verb-readme-generator](https://github.com/verbose/verb-readme-generator) (a [verb](https://github.com/verbose/verb) generator), please don't edit the readme directly. Any changes to the readme must be made in [.verb.md](.verb.md).)_
 
 Generate readme and API documentation with [verb](https://github.com/verbose/verb):
 
@@ -278,4 +243,4 @@ Released under the [MIT license](https://github.com/generate/generate-mocha/blob
 
 ***
 
-_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on June 15, 2016._
+_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on July 09, 2016._
