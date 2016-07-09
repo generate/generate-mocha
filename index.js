@@ -22,7 +22,6 @@ module.exports = function(app, base, env, options) {
   app.use(require('generate-defaults'));
   app.use(require('generate-collections'));
   app.use(require('generate-install'));
-  app.use(utils.register());
   app.use(rename());
   app.use(prompt());
 
