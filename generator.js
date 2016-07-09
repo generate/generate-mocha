@@ -21,10 +21,7 @@ module.exports = function(app, base, env, options) {
    * Paths
    */
 
-  var cwd = path.resolve.bind(path, __dirname);
-  function dir(name) {
-    return app.option(name) || cwd(name);
-  }
+  var src = path.resolve.bind(path, __dirname, 'templates');
 
   /**
    * Instance plugins
@@ -101,13 +98,13 @@ module.exports = function(app, base, env, options) {
     debug('loading templates');
 
     app.includes.option('renameKey', function(key, file) {
-      return file ? file.stem : path.basename(key, path.extname(key));
+      return file ? file.basename : path.basename(key);
     });
 
-    app.includes('*.js', {cwd: dir('templates/includes')});
-    app.layouts('*.js', {cwd: dir('templates/layouts')});
+    app.includes('*.js', {cwd: src('includes')});
+    app.layouts('*.js', {cwd: src('layouts')});
     app.templates('*.js', {
-      cwd: dir('templates'),
+      cwd: src(),
       renameKey: function(key, file) {
         return file ? file.basename : path.basename(key);
       }
@@ -127,6 +124,7 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
+  app.task('choose', {silent: true}, ['prompt-choices']);
   app.task('prompt-choices', {silent: true}, function(cb) {
     app.confirm('choices', 'Want to automatically install mocha next time?');
     app.ask('choices', {save: false}, function(err, answers) {

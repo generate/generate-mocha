@@ -5,7 +5,7 @@
     } catch (err) {
       assert(err);
       assert.equal(err.message, 'expected first argument to be a string');
-      assert.equal(err.message, 'expected callback to be a function');
+      assert.equal(err.message, 'expected a callback function');
       cb();
     }
   });
