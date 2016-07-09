@@ -1,17 +1,19 @@
 ---
 layout: base
-install: ['base', 'vinyl']
+install: ['base', 'vinyl', 'mocha']
+rename: 
+  basename: 'test.js'
 ---
 
   describe('plugin', function() {
-    <%= include("assert-function.js") %>
-    <%= include("assert-object.js") %>
-    <%= include("assert-method.js") %>
-    <%= include("assert-error.js") %>
+    <%= indent(include("assert-function.js")) %>
+    <%= indent(include("assert-object.js")) %>
+    <%= indent(include("assert-method.js")) %>
+    <%= indent(include("assert-error.js")) %>
   });
 
-  describe('.<%= camelcase(project.alias) %>', function() {
-    it('should create an <%= camelcase(project.alias) %> pattern', function() {
-      assert.equal(app.<%= camelcase(project.alias) %>('foo'), 'foo');
+  describe('.<%= camelcase(ask("alias")) %>', function() {
+    it('should create an <%= camelcase(ask("alias")) %> pattern', function() {
+      assert.equal(app.<%= camelcase(ask("alias")) %>('foo'), 'foo');
     });
   });

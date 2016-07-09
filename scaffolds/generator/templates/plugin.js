@@ -1,9 +1,16 @@
+---
+install:
+  devDependencies: ['generate']
+rename:
+  dirname: 'test'
+  basename: 'plugin.js'
+---
 'use strict';
 
 require('mocha');
 var assert = require('assert');
 var generate = require('generate');
-var generator = require('./');
+var generator = require('<%= relative(dest) %>');
 var app;
 
 describe('<%= ask("name") %>', function() {

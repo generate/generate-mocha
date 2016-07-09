@@ -2,8 +2,8 @@
 
 require('mocha');
 var assert = require('assert');
-var <%= camelcase(ask("project.alias")) %> = require('<%= relative(dest) %>');
+var <%= camelcase(ask("alias")) %> = require('<%= relative(dest) %>');
 
-describe('<%= ask("project.name") %>', function() {
+describe('<%= ask("name") %>', function() {
   {% body %}
 });
