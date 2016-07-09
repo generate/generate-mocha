@@ -198,7 +198,7 @@ module.exports = function(app, base, env, options) {
         return file;
       }))
       .pipe(app.conflicts(dest))
-      .pipe(app.dest(dest))
+      .pipe(app.dest(dest));
   });
 
   /**
