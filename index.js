@@ -10,7 +10,7 @@ module.exports = function(app, base, env, options) {
   if (!utils.isValid(app, 'generate-mocha')) return;
 
   /**
-   * Config store for user-defined, generator-specific defaults
+   * Config store for user-defined preferences
    */
 
   var store = new utils.DataStore('generate-mocha');
