@@ -49,6 +49,7 @@ module.exports = function(app, base, env, options) {
   app.helper('indent', function(str) {
     return str.split('\n').join('\n  ');
   });
+
   app.helper('relative', function(dest) {
     var cwd = app.options.dest || app.cwd;
     if (!utils.isString(dest)) {
@@ -59,12 +60,6 @@ module.exports = function(app, base, env, options) {
     }
     return './';
   });
-
-  /**
-   * Sub-generators
-   */
-
-  // app.register('generators/*/', {cwd: __dirname});
 
   /**
    * Generate unit tests for a [generate][] generator. Creates:
@@ -83,6 +78,22 @@ module.exports = function(app, base, env, options) {
 
   app.task('gen', ['generator']);
   task(app, 'generator', 'scaffolds/generator/templates/*.js');
+
+  /**
+   * Generate unit tests for an [update][] "updater". Creates:
+   *
+   *  - `test.js`
+   *  - `plugin.js`
+   *
+   * ```sh
+   * $ gen mocha:updater
+   * ```
+   * @name updater
+   * @api public
+   */
+
+  task(app, 'updater-tests', 'scaffolds/updater/templates/*.js');
+  app.task('updater', ['updater-tests', 'install']);
 
   /**
    * Generate a `test.js` file with unit tests for a [base][] project.
@@ -185,20 +196,20 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
+  app.question('testFile', 'Test fixture file name?', {default: 'example.txt'});
   app.task('mocha', ['templates'], function() {
-    var dest = app.options.dest || app.cwd;
-    var name = app.options.dest || 'test.js';
+    var name = app.options.file || 'test.js';
 
     app.option('askWhen', 'not-answered');
     return app.src('templates/*.js', {cwd: __dirname})
       .pipe(filter(name))
-      .pipe(app.renderFile('*', {dest: dest}))
+      .pipe(app.renderFile('*', {dest: app.cwd}))
       .pipe(app.renameFile(function(file) {
         file.stem = 'test';
         return file;
       }))
-      .pipe(app.conflicts(dest))
-      .pipe(app.dest(dest));
+      .pipe(app.conflicts(app.cwd))
+      .pipe(app.dest(app.cwd));
   });
 
   /**
@@ -211,7 +222,7 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('default', {silent: true}, ['mocha', 'post-generate']);
+  app.task('default', {silent: true}, ['mocha']);
 
   /**
    * This task is used in unit tests to ensure this generator works in all intended
