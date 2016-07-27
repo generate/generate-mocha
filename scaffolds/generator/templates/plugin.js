@@ -19,7 +19,7 @@ describe('<%= ask("name") %>', function() {
   });
 
   describe('plugin', function() {
-    it('should work as a plugin', function() {
+    it('should add tasks to the instance', function() {
       app.use(generator);
       assert(app.tasks.hasOwnProperty('default'));
       assert(app.tasks.hasOwnProperty('<%= ask("alias") %>'));
