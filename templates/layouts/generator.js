@@ -12,27 +12,23 @@ var generator = require('./');
 var del = require('delete');
 var app;
 
+var actual = path.resolve.bind(path, __dirname, 'actual');
+
 function exists(name, cb) {
-  var filepath = path.resolve(__dirname, 'actual', name);
+  var filepath = actual(name);
 
   return function(err) {
     if (err) return cb(err);
 
     fs.stat(filepath, function(err, stat) {
-      assert(stat);
-      del(path.dirname(filepath), cb);
+      if (err) return cb(err);
+      del(actual(), cb);
     });
   }
 }
 
 describe('generate-<%= alias %>', function() {
-  beforeEach(function() {
-    app = generate({cli: true, silent: true});
-
-    app.option('dest', path.resolve(__dirname, 'actual'));
-    app.option('askWhen', 'not-answered');
-    app.data('author.name', 'Brian Woodward');
-  });
+  <%= include("before-each-generator") %>
 
   describe('plugin', function() {
     it('should only register the plugin once', function(cb) {
