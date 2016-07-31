@@ -2,7 +2,6 @@
 
 var path = require('path');
 var src = path.resolve.bind(path, __dirname, 'templates');
-var condense = require('gulp-condense');
 var rename = require('./lib/rename');
 var utils = require('./lib/utils');
 
@@ -10,37 +9,36 @@ module.exports = function(app, base, env, options) {
   if (!utils.isValid(app, 'generate-mocha')) return;
 
   /**
-   * Config store for user-defined preferences
+   * Middleware
    */
 
-  var store = new utils.DataStore('generate-mocha');
+  app.onLoad(/example/, function(file, next) {
+    console.log('onLoad:', file.path)
+    next();
+  });
+
+  app.preWrite(/example/, function(file, next) {
+    console.log('preWrite:', file.path)
+    if (file.stem === 'example' && app.cache.data.filename) {
+      file.basename = app.cache.data.filename;
+    }
+    next();
+  });
 
   /**
    * Plugins
    */
 
-  app.use(require('generate-defaults'));
   app.use(require('generate-collections'));
+  app.use(require('generate-defaults'));
   app.use(require('generate-install'));
-  app.use(rename());
-  app.use(prompt());
-
-  /**
-   * Pipeline plugins
-   */
-
-  app.plugin('rename', rename);
 
   /**
    * Options
    */
 
-  app.option(base.options)
-    .option({delims: ['<%', '%>']})
-    .option('renameFile', function(file) {
-      file.stem = 'test';
-      return file;
-    });
+  app.option(base.options);
+  app.option({delims: ['<%', '%>']});
 
   /**
    * Helpers
@@ -128,63 +126,6 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Prompt the user to save preferences and automatically use them on the next run.
-   *
-   * ```sh
-   * $ gen mocha:prompt-choices
-   * ```
-   * @name mocha:prompt-choices
-   * @api public
-   */
-
-  app.task('choose', {silent: true}, ['prompt-choices']);
-  app.task('prompt-choices', {silent: true}, function(cb) {
-    app.confirm('choices', 'Want to automatically install mocha next time?');
-    app.ask('choices', {save: false}, function(err, answers) {
-      if (err) return cb(err);
-      if (answers.choices) {
-        store.set('install', true);
-      }
-      cb();
-    });
-  });
-
-  /**
-   * Asks if you want to use the same "post-generate" choices next time this generator
-   * is run. If you change your mind, just run `gen node:choices` and you'll be prompted
-   * again.
-   *
-   * If `false`, the [prompt-mocha](), [prompt-npm](), and [prompt-git]() tasks will be
-   * run after files are generated then next time the generator is run.
-   *
-   * If `true`, the [mocha](), [npm](), and [git]() tasks will be run (and you will not
-   * be prompted) after files are generated then next time the generator is run.
-   *
-   * ```sh
-   * $ gen mocha:post-generate
-   * ```
-   * @name mocha:post-generate
-   * @api public
-   */
-
-  app.task('post-generate', {silent: true}, function(cb) {
-    var install = store.get('install') || options.install;
-
-    // user wants to skip prompts
-    if (install === true) {
-      app.generate(['install'], cb);
-
-    // user wants to be prompted (don't ask about installation again)
-    } else if (install === false) {
-      app.generate(['prompt-install'], cb);
-
-    // user hasn't been asked yet
-    } else {
-      app.generate(['prompt-install', 'prompt-choices'], cb);
-    }
-  });
-
-  /**
    * Generate a `test.js` file in the cwd or specified directory. This task
    * is called by the default task. We alias the task as `mocha:mocha` to make
    * it easier for other generators to run it programmatically.
@@ -199,15 +140,10 @@ module.exports = function(app, base, env, options) {
   app.question('testFile', 'Test fixture file name?', {default: 'example.txt'});
   app.task('mocha', ['templates'], function() {
     var name = app.options.file || 'test.js';
-
     app.option('askWhen', 'not-answered');
     return app.src('templates/*.js', {cwd: __dirname})
       .pipe(filter(name))
       .pipe(app.renderFile('*', {dest: app.cwd}))
-      .pipe(app.renameFile(function(file) {
-        file.stem = 'test';
-        return file;
-      }))
       .pipe(app.conflicts(app.cwd))
       .pipe(app.dest(app.cwd));
   });
@@ -249,7 +185,7 @@ function task(app, name, pattern, dependencies) {
   app.task(name, dependencies || [], function() {
     return app.src(pattern, {cwd: __dirname})
       .pipe(app.renderFile('*'))
-      .pipe(condense())
+      .pipe(utils.condense())
       .pipe(app.conflicts(app.cwd))
       .pipe(app.dest(app.cwd));
   });
@@ -272,21 +208,4 @@ function filter(pattern, options) {
       next();
     }
   });
-}
-
-function prompt(options) {
-  return function(app) {
-    this.define('prompt', function(names) {
-      return utils.through.obj(function(file, enc, next) {
-        app.ask(names, {save: false}, function(err, answers) {
-          if (err) {
-            next(err);
-            return;
-          }
-          app.data(answers);
-          next(null, file);
-        });
-      });
-    });
-  };
 }
