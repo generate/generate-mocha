@@ -10,6 +10,7 @@
   },
   "license": "MIT",
   "files": [
+    "generator.js",
     "index.js",
     "lib",
     "LICENSE",
@@ -103,8 +104,8 @@
       "base",
       "generate",
       "verb",
-      "verb-readme-generator",
-      "verb-generate-readme"
+      "verb-generate-readme",
+      "verb-readme-generator"
     ],
     "run": true,
     "toc": true,
