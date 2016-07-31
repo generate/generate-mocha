@@ -1,0 +1,4 @@
+---
+rename: 
+  dirname: test/fixtures
+---

@@ -68,11 +68,11 @@ describe('<%= ask("name") %>', function() {
     });
 
     it('should run the `default` task with .build', function(cb) {
-      app.build('default', exists('<%= ask("filename") %>', cb));
+      app.build('default', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should run the `default` task with .generate', function(cb) {
-      app.generate('default', exists('<%= ask("filename") %>', cb));
+      app.generate('default', exists('<%= ask("testFile") %>', cb));
     });
   });
 
@@ -84,11 +84,11 @@ describe('<%= ask("name") %>', function() {
       });
 
       it('should run the default task using the `<%= ask("name") %>` name', function(cb) {
-        app.generate('<%= ask("name") %>', exists('<%= ask("filename") %>', cb));
+        app.generate('<%= ask("name") %>', exists('<%= ask("testFile") %>', cb));
       });
 
       it('should run the default task using the `generator` generator alias', function(cb) {
-        app.generate('<%= ask("alias") %>', exists('<%= ask("filename") %>', cb));
+        app.generate('<%= ask("alias") %>', exists('<%= ask("testFile") %>', cb));
       });
     });
   }
@@ -100,17 +100,17 @@ describe('<%= ask("name") %>', function() {
 
     it('should run the default task on the generator', function(cb) {
       app.register('<%= ask("alias") %>', generator);
-      app.generate('<%= ask("alias") %>', exists('<%= ask("filename") %>', cb));
+      app.generate('<%= ask("alias") %>', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should run the `<%= ask("alias") %>` task', function(cb) {
       app.register('<%= ask("alias") %>', generator);
-      app.generate('<%= ask("alias") %>:<%= ask("alias") %>', exists('<%= ask("filename") %>', cb));
+      app.generate('<%= ask("alias") %>:<%= ask("alias") %>', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should run the `default` task when defined explicitly', function(cb) {
       app.register('<%= ask("alias") %>', generator);
-      app.generate('<%= ask("alias") %>:default', exists('<%= ask("filename") %>', cb));
+      app.generate('<%= ask("alias") %>:default', exists('<%= ask("testFile") %>', cb));
     });
   });
 
@@ -123,28 +123,28 @@ describe('<%= ask("name") %>', function() {
       app.register('foo', function(foo) {
         foo.register('<%= ask("alias") %>', generator);
       });
-      app.generate('foo.<%= ask("alias") %>', exists('<%= ask("filename") %>', cb));
+      app.generate('foo.<%= ask("alias") %>', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should run the `default` task by default', function(cb) {
       app.register('foo', function(foo) {
         foo.register('<%= ask("alias") %>', generator);
       });
-      app.generate('foo.<%= ask("alias") %>', exists('<%= ask("filename") %>', cb));
+      app.generate('foo.<%= ask("alias") %>', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should run the `<%= ask("alias") %>:default` task when defined explicitly', function(cb) {
       app.register('foo', function(foo) {
         foo.register('<%= ask("alias") %>', generator);
       });
-      app.generate('foo.<%= ask("alias") %>:default', exists('<%= ask("filename") %>', cb));
+      app.generate('foo.<%= ask("alias") %>:default', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should run the `<%= ask("alias") %>:<%= ask("alias") %>` task', function(cb) {
       app.register('foo', function(foo) {
         foo.register('<%= ask("alias") %>', generator);
       });
-      app.generate('foo.<%= ask("alias") %>:<%= ask("alias") %>', exists('<%= ask("filename") %>', cb));
+      app.generate('foo.<%= ask("alias") %>:<%= ask("alias") %>', exists('<%= ask("testFile") %>', cb));
     });
 
     it('should work with nested sub-generators', function(cb) {
@@ -152,7 +152,7 @@ describe('<%= ask("name") %>', function() {
         .register('foo', generator)
         .register('bar', generator)
         .register('baz', generator);
-      app.generate('foo.bar.baz', exists('<%= ask("filename") %>', cb));
+      app.generate('foo.bar.baz', exists('<%= ask("testFile") %>', cb));
     });
   });
 });
