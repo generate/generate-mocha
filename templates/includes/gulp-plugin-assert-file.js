@@ -1,5 +1,5 @@
   it('should export an object', function(cb) {
-    var stream = <%= camelcase(project.alias) %>();
+    var stream = <%= camelcase(alias) %>();
     var buffer = [];
 
     stream.write(new File({
@@ -16,6 +16,6 @@
       assert.equal(buffer[0].relative, 'file.txt');
       cb();
     });
-    
+
     stream.end();
   });

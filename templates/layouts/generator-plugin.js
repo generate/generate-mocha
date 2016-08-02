@@ -47,11 +47,6 @@ describe('generate-<%= alias %>', function() {
   });
 
   describe('sub-generator', function() {
-
-    /**
-     * Uncomment after adding a custom task
-     */
-      
     it('should run tasks as a sub-generator', function(cb) {
       app = generate({silent: true, cli: true});
 
@@ -70,31 +65,22 @@ describe('generate-<%= alias %>', function() {
     it('should work as a plugin', function() {
       app.use(generator);
       assert(app.tasks.hasOwnProperty('default'));
-
-      /**
-       * Uncomment after adding a custom task
-       */
-      
-      // assert(app.tasks.hasOwnProperty('foo'));
+      assert(app.tasks.hasOwnProperty('<%= alias %>'));
     });
 
-    /**
-     * Uncomment after adding tasks that generate files
-     */
-    
-    // it('should work as a generator', function(cb) {
-    //   app.register('<%= alias %>', generator);
-    //   app.generate('<%= alias %>', exists('LICENSE', cb));
-    // });
+    it('should work as a generator', function(cb) {
+      app.register('<%= alias %>', generator);
+      app.generate('<%= alias %>', exists('LICENSE', cb));
+    });
 
-    // it('should run the `default` task', function(cb) {
-    //   app.register('<%= alias %>', generator);
-    //   app.generate('<%= alias %>:default', exists('LICENSE', cb));
-    // });
+    it('should run the `default` task', function(cb) {
+      app.register('<%= alias %>', generator);
+      app.generate('<%= alias %>:default', exists('LICENSE', cb));
+    });
 
-    // it('should run the `foo` task', function(cb) {
-    //   app.register('<%= alias %>', generator);
-    //   app.generate('<%= alias %>:foo', exists('LICENSE', cb));
-    // });
+    it('should run the `foo` task', function(cb) {
+      app.register('<%= alias %>', generator);
+      app.generate('<%= alias %>:foo', exists('LICENSE', cb));
+    });
   });
 });
