@@ -28,9 +28,9 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "generate-collections": "^0.3.5",
-    "generate-defaults": "^0.4.2",
-    "generate-install": "^0.1.8",
+    "generate-collections": "^0.3.6",
+    "generate-defaults": "^0.6.0",
+    "generate-install": "^0.2.0",
     "gulp-condense": "^0.1.0",
     "is-valid-app": "^0.2.0",
     "kind-of": "^3.0.4",
@@ -42,15 +42,18 @@
   "devDependencies": {
     "bdd-stdin": "^0.2.0",
     "delete": "^0.3.2",
-    "generate": "^0.9.8",
+    "generate": "^0.11.2",
     "gulp": "^3.9.1",
     "gulp-eslint": "^3.0.1",
-    "gulp-format-md": "^0.1.9",
-    "gulp-istanbul": "^1.0.0",
-    "gulp-mocha": "^2.2.0",
+    "gulp-format-md": "^0.1.10",
+    "gulp-istanbul": "^1.1.0",
+    "gulp-mocha": "^3.0.1",
     "gulp-unused": "^0.1.2",
-    "mocha": "^2.5.3",
-    "npm-install-global": "^0.1.2"
+    "mocha": "^3.0.2",
+    "npm-install-global": "^0.1.2",
+    "verb-generate-readme": "^0.1.30",
+    "verb-trees": "^0.1.0",
+    "vinyl": "^1.2.0"
   },
   "keywords": [
     "app",
@@ -97,6 +100,9 @@
     ]
   },
   "verb": {
+    "run": true,
+    "toc": true,
+    "layout": "generator",
     "plugins": [
       "gulp-format-md"
     ],
@@ -105,11 +111,11 @@
       "generate",
       "verb",
       "verb-generate-readme",
-      "verb-readme-generator"
+      "verb-readme-generator",
+      "assemble",
+      "gulp",
+      "update"
     ],
-    "run": true,
-    "toc": true,
-    "layout": "global",
     "lint": {
       "reflinks": true
     },
