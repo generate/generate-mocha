@@ -9,7 +9,7 @@ var fs = require('fs');
 var path = require('path');
 var File = require('vinyl');
 var assert = require('assert');
-var <%= camelcase(ask("name")) %> = require('./');
+var <%= camelcase(ask("name")) %> = require('<%= relative(dest) %>');
 
 describe('<%= ask("name") %>', function () {
   it('should add an <%= camelcase(ask("name")) %> method', function (cb) {
