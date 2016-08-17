@@ -9,23 +9,6 @@ module.exports = function(app, base, env, options) {
   if (!utils.isValid(app, 'generate-mocha')) return;
 
   /**
-   * Middleware
-   */
-
-  app.onLoad(/example/, function(file, next) {
-    console.log('onLoad:', file.path)
-    next();
-  });
-
-  app.preWrite(/example/, function(file, next) {
-    console.log('preWrite:', file.path)
-    if (file.stem === 'example' && app.cache.data.filename) {
-      file.basename = app.cache.data.filename;
-    }
-    next();
-  });
-
-  /**
    * Plugins
    */
 
@@ -58,6 +41,42 @@ module.exports = function(app, base, env, options) {
     }
     return './';
   });
+
+  /**
+   * Alias for the [test]() task. Allows the generator to be run with the following command:
+   *
+   * ```sh
+   * $ gen mocha
+   * ```
+   * @name default
+   * @api public
+   */
+
+  app.task('default', {silent: true}, ['mocha']);
+
+  /**
+   * Generate a `test.js` file with unit tests for a [base][] project.
+   *
+   * ```sh
+   * $ gen mocha:base
+   * ```
+   * @name base
+   * @api public
+   */
+
+  task(app, 'base', 'templates/base.js', ['templates']);
+
+  /**
+   * Generate a `test.js` file with unit tests for a [gulp][] plugin project.
+   *
+   * ```sh
+   * $ gen mocha:gulp
+   * ```
+   * @name gulp
+   * @api public
+   */
+
+  task(app, 'gulp', 'scaffolds/plugin-gulp/test.js', ['templates']);
 
   /**
    * Generate unit tests for a [generate][] generator. Creates:
@@ -94,26 +113,13 @@ module.exports = function(app, base, env, options) {
   app.task('updater', ['updater-tests', 'install']);
 
   /**
-   * Generate a `test.js` file with unit tests for a [base][] project.
-   *
-   * ```sh
-   * $ gen mocha:base
-   * ```
-   * @name base
-   * @api public
-   */
-
-  task(app, 'base', 'templates/base.js', ['templates']);
-
-  /**
    * Pre-load templates. This is called by the [default](#default) task, but if you call
    * this task directly make sure it's called after collections are created.
    *
    * ```sh
    * $ gen mocha:templates
    * ```
-   * @name mocha:templates
-   * @api public
+   * @name templates
    */
 
   app.task('templates', {silent: false}, function(cb) {
@@ -133,13 +139,12 @@ module.exports = function(app, base, env, options) {
    * ```sh
    * $ gen mocha:mocha
    * ```
-   * @name mocha:mocha
-   * @api public
+   * @name mocha
    */
 
-  app.question('testFile', 'Test fixture file name?', {default: 'example.txt'});
   app.task('mocha', ['templates'], function() {
     var name = app.options.file || 'test.js';
+    app.question('testFile', 'Test fixture file name?', {default: 'example.txt'});
     app.option('askWhen', 'not-answered');
     return app.src('templates/*.js', {cwd: __dirname})
       .pipe(filter(name))
@@ -149,26 +154,13 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Alias for the [test]() task. Allows the generator to be run with the following command:
-   *
-   * ```sh
-   * $ gen mocha
-   * ```
-   * @name mocha:default
-   * @api public
-   */
-
-  app.task('default', {silent: true}, ['mocha']);
-
-  /**
    * This task is used in unit tests to ensure this generator works in all intended
    * scenarios.
    *
    * ```sh
    * $ gen mocha:unit-test
    * ```
-   * @name mocha:unit-test
-   * @api public
+   * @name unit-test
    */
 
   app.task('unit-test', function(cb) {
