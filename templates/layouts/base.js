@@ -14,6 +14,6 @@ describe('<%= name %>', function() {
     app = new Base();
     app.use(<%= camelcase(ask("alias")) %>());
   });
-  
+
   {% body %}
 });
