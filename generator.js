@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path');
+var beautify = require('gulp-js-beautify');
 var src = path.resolve.bind(path, __dirname, 'templates');
 var rename = require('./lib/rename');
 var utils = require('./lib/utils');
@@ -31,15 +32,14 @@ module.exports = function(app, base, env, options) {
     return str.split('\n').join('\n  ');
   });
 
-  app.helper('relative', function(dest) {
-    var cwd = app.options.dest || app.cwd;
-    if (!utils.isString(dest)) {
-      dest = this.view.dirname;
-    }
-    if (utils.isString(dest) && dest !== cwd) {
-      return path.relative(dest, cwd);
-    }
-    return './';
+  app.helper('relative', function() {
+    var dest = app.options.dest || app.cwd;
+    var cwd = process.cwd();
+    return dest !== cwd ? path.relative(dest, cwd) : './';
+  });
+
+  app.helper('helperName', function(name) {
+    return name.replace(/^(handlebars-)?helper-/, '');
   });
 
   /**
@@ -52,7 +52,7 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  app.task('default', {silent: true}, ['mocha']);
+  app.task('default', {silent: true}, ['mocha', 'prompt-install']);
 
   /**
    * Generate a `test.js` file with unit tests for a [base][] project.
@@ -77,6 +77,44 @@ module.exports = function(app, base, env, options) {
    */
 
   task(app, 'gulp', 'scaffolds/plugin-gulp/test.js', ['templates']);
+
+  /**
+   * Generate a `test.js` file with unit tests for generic template helpers.
+   *
+   * ```sh
+   * $ gen mocha:helper
+   * ```
+   * @name helper
+   * @api public
+   */
+
+  task(app, 'helper', 'scaffolds/helpers/helper.js', ['templates']);
+
+  /**
+   * Generate a `test.js` file with unit tests for handlebars helpers.
+   *
+   * ```sh
+   * $ gen mocha:hbs
+   * $ gen mocha:handlebars
+   * ```
+   * @name handlebars
+   * @api public
+   */
+
+  app.task('hbs', ['handlebars']);
+  task(app, 'handlebars', 'scaffolds/helpers/handlebars.js', ['templates']);
+
+  /**
+   * Generate a `test.js` file for a regex project.
+   *
+   * ```sh
+   * $ gen mocha:regex
+   * ```
+   * @name regex
+   * @api public
+   */
+
+  task(app, 'regex', 'templates/regex.js', ['templates']);
 
   /**
    * Generate unit tests for a [generate][] generator. Creates:
@@ -113,6 +151,26 @@ module.exports = function(app, base, env, options) {
   app.task('updater', ['updater-tests', 'install']);
 
   /**
+   * Generate a `test.js` file in the cwd or specified directory. This task
+   * is called by the default task. We alias the task as `mocha:mocha` to make
+   * it easier for other generators to run it programmatically.
+   *
+   * ```sh
+   * $ gen mocha:mocha
+   * ```
+   * @name mocha
+   */
+
+  app.task('mocha', [initPrompts, 'templates', 'data'], function(cb) {
+    return app.src('templates/*.js', {cwd: __dirname})
+      .pipe(filter(app.options.file || 'test.js'))
+      .pipe(app.renderFile('*', {dest: app.cwd}))
+      .pipe(app.conflicts(app.cwd))
+      .pipe(beautify({ indent_size: 2 }))
+      .pipe(app.dest(app.cwd));
+  });
+
+  /**
    * Pre-load templates. This is called by the [default](#default) task, but if you call
    * this task directly make sure it's called after collections are created.
    *
@@ -132,26 +190,28 @@ module.exports = function(app, base, env, options) {
   });
 
   /**
-   * Generate a `test.js` file in the cwd or specified directory. This task
-   * is called by the default task. We alias the task as `mocha:mocha` to make
-   * it easier for other generators to run it programmatically.
+   * Merge prompt data from the base instance onto the generator's instance.
    *
    * ```sh
-   * $ gen mocha:mocha
+   * $ gen mocha:data
    * ```
-   * @name mocha
+   * @name data
    */
 
-  app.task('mocha', ['templates'], function() {
-    var name = app.options.file || 'test.js';
+  app.task('data', function(cb) {
+    app.data(app.base.cache.data);
+    cb();
+  });
+
+  /**
+   * Add custom prompts for this generator and set options to be used during prompts.
+   */
+
+  function initPrompts(cb) {
     app.question('testFile', 'Test fixture file name?', {default: 'example.txt'});
     app.option('askWhen', 'not-answered');
-    return app.src('templates/*.js', {cwd: __dirname})
-      .pipe(filter(name))
-      .pipe(app.renderFile('*', {dest: app.cwd}))
-      .pipe(app.conflicts(app.cwd))
-      .pipe(app.dest(app.cwd));
-  });
+    cb();
+  }
 
   /**
    * This task is used in unit tests to ensure this generator works in all intended
@@ -179,6 +239,7 @@ function task(app, name, pattern, dependencies) {
       .pipe(app.renderFile('*'))
       .pipe(utils.condense())
       .pipe(app.conflicts(app.cwd))
+      .pipe(beautify({ indent_size: 2 }))
       .pipe(app.dest(app.cwd));
   });
 }
@@ -187,14 +248,17 @@ function task(app, name, pattern, dependencies) {
  * Filter files to be rendered
  */
 
-function filter(pattern, options) {
-  var isMatch = utils.match.matcher(pattern, options);
+function filter(name, options) {
   return utils.through.obj(function(file, enc, next) {
     if (file.isNull()) {
       next();
       return;
     }
-    if (isMatch(file)) {
+
+    var basename = path.basename(file.history[0]);
+    var stem = basename.slice(0, -3);
+
+    if (basename === name || stem === name) {
       next(null, file);
     } else {
       next();
