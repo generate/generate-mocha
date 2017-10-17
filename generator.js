@@ -1,13 +1,15 @@
 'use strict';
 
 var path = require('path');
+var debug = require('debug')('generate-mocha');
 var beautify = require('gulp-js-beautify');
-var src = path.resolve.bind(path, __dirname, 'templates');
 var rename = require('./lib/rename');
 var utils = require('./lib/utils');
+var src = path.resolve.bind(path, __dirname, 'templates');
 
 module.exports = function(app, base, env, options) {
   if (!utils.isValid(app, 'generate-mocha')) return;
+  debug('initializing from <%s>', __filename);
 
   /**
    * Plugins
@@ -38,6 +40,7 @@ module.exports = function(app, base, env, options) {
     return dest !== cwd ? path.relative(dest, cwd) : './';
   });
 
+  app.helper('camelcase', require('camel-case'));
   app.helper('helperName', function(name) {
     return name.replace(/^(handlebars-)?helper-/, '');
   });
@@ -117,6 +120,18 @@ module.exports = function(app, base, env, options) {
   task(app, 'regex', 'templates/regex.js', ['templates']);
 
   /**
+   * Generate a `test.js` file for an [enquirer][] prompt module.
+   *
+   * ```sh
+   * $ gen mocha:prompt
+   * ```
+   * @name prompt
+   * @api public
+   */
+
+  task(app, 'prompt', 'templates/prompt.js', ['templates']);
+
+  /**
    * Generate unit tests for a [generate][] generator. Creates:
    *
    *  - `test.js`
@@ -147,8 +162,8 @@ module.exports = function(app, base, env, options) {
    * @api public
    */
 
-  task(app, 'updater-tests', 'scaffolds/updater/templates/*.js');
   app.task('updater', ['updater-tests', 'install']);
+  task(app, 'updater-tests', 'scaffolds/updater/templates/*.js');
 
   /**
    * Generate a `test.js` file in the cwd or specified directory. This task
@@ -165,8 +180,8 @@ module.exports = function(app, base, env, options) {
     return app.src('templates/*.js', {cwd: __dirname})
       .pipe(filter(app.options.file || 'test.js'))
       .pipe(app.renderFile('*', {dest: app.cwd}))
-      .pipe(app.conflicts(app.cwd))
       .pipe(beautify({ indent_size: 2 }))
+      .pipe(app.conflicts(app.cwd))
       .pipe(app.dest(app.cwd));
   });
 
@@ -234,13 +249,17 @@ module.exports = function(app, base, env, options) {
  */
 
 function task(app, name, pattern, dependencies) {
-  app.task(name, dependencies || [], function() {
-    return app.src(pattern, {cwd: __dirname})
+  app.task(name, dependencies || [], function(cb) {
+    app.src(pattern, {cwd: __dirname})
       .pipe(app.renderFile('*'))
       .pipe(utils.condense())
-      .pipe(app.conflicts(app.cwd))
       .pipe(beautify({ indent_size: 2 }))
-      .pipe(app.dest(app.cwd));
+      .pipe(app.conflicts(app.cwd))
+      .pipe(app.dest(app.cwd))
+      .on('error', cb)
+      .on('end', function() {
+        app.build('prompt-install', cb);
+      })
   });
 }
 
